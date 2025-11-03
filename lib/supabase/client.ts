@@ -30,7 +30,21 @@ export const createClient = () => {
     
     supabaseClient = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          flowType: 'pkce',
+          detectSessionInUrl: true,
+          persistSession: true,
+          storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+        },
+        cookieOptions: {
+          name: 'sb-auth-token',
+          domain: typeof window !== 'undefined' ? window.location.hostname : undefined,
+          path: '/',
+          sameSite: 'lax',
+        },
+      }
     )
   }
   return supabaseClient

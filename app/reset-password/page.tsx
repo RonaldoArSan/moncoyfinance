@@ -19,40 +19,48 @@ function ResetPasswordForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
+  const [sessionChecked, setSessionChecked] = useState(false)
   
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
 
   useEffect(() => {
-    // Verificar se há tokens de recuperação na URL
-    const accessToken = searchParams.get('access_token')
-    const refreshToken = searchParams.get('refresh_token')
-    
-    console.log('🔐 Reset password page loaded:', {
-      hasAccessToken: !!accessToken,
-      hasRefreshToken: !!refreshToken,
-      allParams: Object.fromEntries(searchParams.entries())
-    })
-    
-    if (accessToken && refreshToken) {
-      console.log('🔄 Setting session with tokens from URL')
-      // Definir a sessão com os tokens
-      supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken
-      }).then((result: { data: unknown; error: unknown }) => {
-        if (result.error) {
-          console.error('❌ Error setting session:', result.error)
-          setError('Erro ao validar tokens de recuperação')
+    const checkSession = async () => {
+      console.log('🔐 Reset password page loaded')
+      
+      try {
+        // Verificar se há sessão ativa (criada pelo callback)
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        console.log('� Session check:', {
+          hasSession: !!session,
+          userId: session?.user?.id,
+          email: session?.user?.email,
+          error: sessionError
+        })
+        
+        if (!session) {
+          console.error('❌ No active session found')
+          setError('Sessão expirada. Por favor, solicite um novo link de recuperação.')
+          // Redirecionar para forgot-password após 3 segundos
+          setTimeout(() => {
+            router.push('/forgot-password')
+          }, 3000)
         } else {
-          console.log('✅ Session set successfully:', result.data)
+          console.log('✅ Session found, user can reset password')
         }
-      })
-    } else {
-      console.warn('⚠️ No tokens found in URL')
+        
+        setSessionChecked(true)
+      } catch (err) {
+        console.error('❌ Error checking session:', err)
+        setError('Erro ao verificar sessão')
+        setSessionChecked(true)
+      }
     }
-  }, [searchParams, supabase])
+    
+    checkSession()
+  }, [supabase, router])
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -95,6 +103,22 @@ function ResetPasswordForm() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Loading state enquanto verifica sessão
+  if (!sessionChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-background to-secondary-50 dark:from-gray-900 dark:via-background dark:to-gray-800 p-4">
+        <Card className="w-full max-w-md shadow-lg border-0 bg-background/80 backdrop-blur">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-muted-foreground">Verificando sessão...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   if (success) {

@@ -23,13 +23,29 @@ export default function ForgotPasswordPage() {
     setIsLoading(true)
 
     try {
-      console.log('📧 Sending password reset email...')
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback`,
+      console.log('📧 Sending password reset OTP email...')
+      
+      // Usar signInWithOtp em vez de resetPasswordForEmail
+      // Isso evita problemas com PKCE e envia um magic link funcional
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email,
+        options: {
+          shouldCreateUser: false, // Não criar novo usuário, apenas autenticar existente
+          emailRedirectTo: `${window.location.origin}/reset-password`,
+        }
       })
 
       if (error) {
         console.error('❌ Error sending reset email:', error)
+        
+        // Se o erro for "User not found", usar mensagem genérica por segurança
+        if (error.message?.includes('not found') || error.status === 400) {
+          // Não revelar que o email não existe por segurança
+          console.log('📧 Email not found, but showing success message for security')
+          setIsEmailSent(true)
+          return
+        }
+        
         throw error
       }
 
@@ -47,13 +63,25 @@ export default function ForgotPasswordPage() {
     setIsLoading(true)
     
     try {
-      console.log('📧 Resending password reset email...')
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback`,
+      console.log('📧 Resending password reset OTP email...')
+      
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email,
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: `${window.location.origin}/reset-password`,
+        }
       })
 
       if (error) {
         console.error('❌ Error resending email:', error)
+        
+        // Não revelar que o email não existe
+        if (error.message?.includes('not found') || error.status === 400) {
+          console.log('📧 Email not found on resend')
+          return
+        }
+        
         throw error
       }
       
