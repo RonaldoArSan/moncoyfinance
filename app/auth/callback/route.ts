@@ -107,17 +107,37 @@ export async function GET(request: NextRequest) {
       const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
       
       if (exchangeError) {
+        const isPKCEError = exchangeError.message?.includes('PKCE') || 
+                            exchangeError.message?.includes('code verifier') ||
+                            exchangeError.message?.includes('code challenge')
+        
         logger.error('❌ Error exchanging code for session:', {
           error: exchangeError.message,
           status: exchangeError.status,
           name: exchangeError.name,
           code: code.substring(0, 10) + '...',
           // Log detalhes específicos de erro
-          isPKCEError: exchangeError.message?.includes('PKCE'),
+          isPKCEError,
           isExpiredCode: exchangeError.message?.includes('expired'),
           isInvalidCode: exchangeError.message?.includes('invalid'),
         })
         
+        // Se for erro de code verifier (PKCE) em password reset, redirecionar com instrução
+        if (isPKCEError) {
+          logger.error('⚠️ PKCE code verifier missing - Password reset link incompatível', {
+            message: 'O link de email não é compatível com PKCE flow. Usuário deve usar link válido.',
+            solution: 'Solicitar novo link de password reset'
+          })
+          
+          return NextResponse.redirect(
+            new URL(
+              `/forgot-password?error=${encodeURIComponent('Link inválido ou expirado. Por favor, solicite um novo link de recuperação.')}`,
+              requestUrl.origin
+            )
+          )
+        }
+        
+        // Outros erros
         return NextResponse.redirect(
           new URL(
             `/login?error=${encodeURIComponent('Erro ao autenticar. Tente novamente.')}`,

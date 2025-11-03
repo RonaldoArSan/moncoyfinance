@@ -11,11 +11,14 @@ import { Mail, ArrowLeft, CheckCircle, Clock } from "lucide-react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase/client"
 
+import { useSearchParams } from "next/navigation"
+
 export default function ForgotPasswordPage() {
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isEmailSent, setIsEmailSent] = useState(false)
-  const [error, setError] = useState("")
+  const [error, setError] = useState(searchParams.get('error') || "")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
