@@ -136,10 +136,13 @@ function ResetPasswordForm() {
       console.log('✅ Password updated successfully')
       setSuccess(true)
       
-      // Redirecionar após 3 segundos
+      // Deslogar o usuário após resetar senha
+      await supabase.auth.signOut()
+      
+      // Redirecionar após 2 segundos
       setTimeout(() => {
-        router.push('/login?message=password-updated')
-      }, 3000)
+        router.push('/login?message=Senha redefinida com sucesso! Faça login com sua nova senha.')
+      }, 2000)
 
     } catch (error: any) {
       console.error('❌ Reset password error:', error)

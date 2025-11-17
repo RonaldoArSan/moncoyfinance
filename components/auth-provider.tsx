@@ -145,11 +145,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else if (event === 'SIGNED_IN' && session?.user) {
           console.log('✨ User signed in:', session.user.email)
           
-          // Se estiver em /reset-password, NÃO processar o usuário ainda
-          // O usuário só deve ser processado após redefinir a senha
+          // Se estiver na página de reset-password, não processar o login ainda
           if (pathname === '/reset-password') {
-            console.log('🔑 User signed in for password reset, skipping profile load')
-            setUser(session.user as any)
+            console.log('🔒 User on reset-password page, skipping auto-login')
+            setUser({
+              id: session.user.id,
+              email: session.user.email || '',
+              user_metadata: session.user.user_metadata || {},
+              role: session.user.role,
+              aud: session.user.aud,
+              created_at: session.user.created_at,
+              updated_at: session.user.updated_at
+            })
+            // Não carregar perfil, não redirecionar - deixar usuário resetar senha
             return
           }
           
@@ -200,6 +208,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         pathname === '/forgot-password' ||
         pathname === '/reset-password' ||
         pathname?.startsWith('/auth/callback')
+      
+      // Se estiver em reset-password, não processar perfil (usuário precisa resetar senha primeiro)
+      if (pathname === '/reset-password') {
+        console.log('🔒 [AuthProvider] User on reset-password page, minimal auth only')
+        return
+      }
       
       // Carregar perfil do usuário (exceto para modo público ou páginas públicas)
       if (mode !== 'public' && !isPublicPage) {
