@@ -39,24 +39,50 @@ export default function ProfilePage() {
 
   const initials = (user?.name || "Usuário").split(" ").map(p => p[0]).slice(0, 2).join("").toUpperCase()
   const [photoUploading, setPhotoUploading] = useState(false)
+  
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || !user?.id) return
+
+    // Validações no frontend
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
+    if (!allowedTypes.includes(file.type)) {
+      alert('Tipo de arquivo não permitido. Use JPEG, PNG, WebP ou GIF')
+      return
+    }
+
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    if (file.size > maxSize) {
+      alert('Arquivo muito grande. Máximo: 5MB')
+      return
+    }
+
     setPhotoUploading(true)
     const formData = new FormData()
     formData.append('file', file)
     formData.append('userId', user.id)
+    
     try {
       const res = await fetch('/api/user/upload-photo', {
         method: 'POST',
         body: formData,
       })
-      if (!res.ok) throw new Error('Falha ao enviar foto')
-      const { photoUrl } = await res.json()
-      await updateUser?.({ photo_url: photoUrl })
-      alert('Foto atualizada!')
+      
+      const data = await res.json()
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Falha ao enviar foto')
+      }
+      
+      // Atualizar o estado local imediatamente
+      await updateUser?.({ photo_url: data.photoUrl })
+      alert('Foto atualizada com sucesso!')
+      
+      // Forçar reload para garantir que a imagem seja atualizada
+      window.location.reload()
     } catch (e: any) {
       alert(e.message || 'Erro ao enviar foto')
+      console.error('Erro no upload:', e)
     } finally {
       setPhotoUploading(false)
     }
@@ -95,23 +121,6 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Avatar className="w-16 h-16">
-            <AvatarImage src={user?.photo_url || undefined} alt={user?.name || 'Foto de perfil'} />
-            <AvatarFallback>{initials}</AvatarFallback>
-          </Avatar>
-          <div>
-            <input type="file" accept="image/*" onChange={handlePhotoChange} disabled={photoUploading} />
-            {photoUploading && <span className="text-xs text-gray-500 ml-2">Enviando...</span>}
-          </div>
-        </div>
-        <Badge variant="secondary" className="text-sm">
-          <CreditCard className="w-4 h-4 mr-1" />
-          Plano {planLabel}
-        </Badge>
-      </div>
-
       <div className="grid gap-6 md:grid-cols-2">
         {/* Informações Pessoais */}
         <Card>
@@ -125,12 +134,32 @@ export default function ProfilePage() {
           <CardContent className="space-y-4">
             <div className="flex items-center space-x-4">
               <Avatar className="w-20 h-20">
-                <AvatarImage src={"/diverse-user-avatars.png"} alt={user?.name || "Usuário"} />
+                <AvatarImage src={user?.photo_url || "/diverse-user-avatars.png"} alt={user?.name || "Usuário"} />
                 <AvatarFallback className="text-lg">{initials}</AvatarFallback>
               </Avatar>
-              <Button variant="outline" size="sm" disabled>
-                Alterar Foto
-              </Button>
+              <div className="flex flex-col gap-2">
+                <label htmlFor="avatar-upload">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    disabled={photoUploading}
+                    onClick={() => document.getElementById('avatar-upload')?.click()}
+                    type="button"
+                  >
+                    {photoUploading ? 'Enviando...' : 'Alterar Foto'}
+                  </Button>
+                </label>
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                  onChange={handlePhotoChange}
+                  className="hidden"
+                />
+                {photoUploading && (
+                  <span className="text-xs text-muted-foreground">Fazendo upload...</span>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
