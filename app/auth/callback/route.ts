@@ -10,6 +10,8 @@ export async function GET(request: NextRequest) {
   const errorDescription = requestUrl.searchParams.get('error_description')
   const errorCode = requestUrl.searchParams.get('error_code')
   const type = requestUrl.searchParams.get('type')
+  const tokenHash = requestUrl.searchParams.get('token_hash')
+  const token = requestUrl.searchParams.get('token')
   const next = requestUrl.searchParams.get('next') ?? '/'
   
   // 🚨 VERIFICAR VARIÁVEIS DE AMBIENTE
@@ -44,6 +46,8 @@ export async function GET(request: NextRequest) {
   logger.dev('🔐 Auth callback received:', { 
     hasCode: !!code,
     codeLength: code?.length || 0,
+    hasTokenHash: !!tokenHash,
+    hasToken: !!token,
     type,
     error, 
     errorDescription,
@@ -59,6 +63,16 @@ export async function GET(request: NextRequest) {
       host: request.headers.get('host'),
     }
   })
+
+  // 🔑 PRIORIDADE 1: Se for password recovery com token_hash, redirecionar IMEDIATAMENTE
+  if (type === 'recovery' && (tokenHash || token)) {
+    logger.dev('🔄 Password recovery with token_hash detected, redirecting to /reset-password')
+    const resetUrl = new URL('/reset-password', requestUrl.origin)
+    resetUrl.searchParams.set('type', 'recovery')
+    if (tokenHash) resetUrl.searchParams.set('token_hash', tokenHash)
+    if (token) resetUrl.searchParams.set('token', token)
+    return NextResponse.redirect(resetUrl)
+  }
 
   // Se houver erro no OAuth, redirecionar para login com mensagem
   if (error) {

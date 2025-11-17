@@ -28,16 +28,22 @@ function ResetPasswordForm() {
     // Verificar se há tokens de recuperação na URL
     const accessToken = searchParams.get('access_token')
     const refreshToken = searchParams.get('refresh_token')
+    const token = searchParams.get('token')
+    const tokenHash = searchParams.get('token_hash')
+    const type = searchParams.get('type')
     
     console.log('🔐 Reset password page loaded:', {
       hasAccessToken: !!accessToken,
       hasRefreshToken: !!refreshToken,
+      hasToken: !!token,
+      hasTokenHash: !!tokenHash,
+      type,
       allParams: Object.fromEntries(searchParams.entries())
     })
     
+    // Tentar definir sessão com access_token/refresh_token (formato novo)
     if (accessToken && refreshToken) {
-      console.log('🔄 Setting session with tokens from URL')
-      // Definir a sessão com os tokens
+      console.log('🔄 Setting session with access/refresh tokens from URL')
       supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken
@@ -49,8 +55,40 @@ function ResetPasswordForm() {
           console.log('✅ Session set successfully:', result.data)
         }
       })
-    } else {
-      console.warn('⚠️ No tokens found in URL')
+    } 
+    // Tentar com token_hash (formato antigo do email)
+    else if (tokenHash && type === 'recovery') {
+      console.log('🔄 Verifying OTP with token_hash')
+      supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: 'recovery'
+      }).then((result: { data: unknown; error: unknown }) => {
+        if (result.error) {
+          console.error('❌ Error verifying OTP:', result.error)
+          setError('Link inválido ou expirado. Solicite um novo link de recuperação.')
+        } else {
+          console.log('✅ OTP verified successfully:', result.data)
+        }
+      })
+    }
+    // Tentar com token simples
+    else if (token && type === 'recovery') {
+      console.log('🔄 Verifying OTP with token')
+      supabase.auth.verifyOtp({
+        token_hash: token,
+        type: 'recovery'
+      }).then((result: { data: unknown; error: unknown }) => {
+        if (result.error) {
+          console.error('❌ Error verifying OTP:', result.error)
+          setError('Link inválido ou expirado. Solicite um novo link de recuperação.')
+        } else {
+          console.log('✅ OTP verified successfully:', result.data)
+        }
+      })
+    } 
+    else {
+      console.warn('⚠️ No valid tokens found in URL')
+      setError('Link de recuperação inválido. Por favor, solicite um novo.')
     }
   }, [searchParams, supabase])
 
