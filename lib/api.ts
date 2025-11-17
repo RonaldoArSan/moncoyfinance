@@ -211,6 +211,8 @@ export const transactionsApi = {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
 
+    console.log('📝 API: Criando transação no Supabase...', transaction)
+
     const { data, error } = await supabase
       .from('transactions')
       .insert({ ...transaction, user_id: user.id })
@@ -220,7 +222,12 @@ export const transactionsApi = {
       `)
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('❌ API: Erro do Supabase:', error)
+      throw error
+    }
+    
+    console.log('✅ API: Transação criada com sucesso:', data)
     return data
   },
 

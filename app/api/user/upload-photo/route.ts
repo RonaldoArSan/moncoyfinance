@@ -78,6 +78,12 @@ export async function POST(request: NextRequest) {
 
     const photoUrl = urlData.publicUrl
 
+    console.log('=== UPLOAD SUCCESS ===')
+    console.log('Upload path:', uploadData.path)
+    console.log('Public URL:', photoUrl)
+    console.log('User ID:', userId)
+    console.log('======================')
+
     // Atualizar perfil do usuário no banco
     const { error: updateError } = await supabase
       .from('users')

@@ -12,8 +12,17 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    // Ajuste conforme sua infra de imagens; manter "true" evita otimização em runtime
+    // Otimização de imagens desabilitada temporariamente para compatibilidade com Radix UI Avatar
     unoptimized: true,
+    // Domínios remotos permitidos (formato antigo para compatibilidade)
+    domains: ['jxpgiqmwugsqpvrftmhl.supabase.co'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'jxpgiqmwugsqpvrftmhl.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
   },
 }
 

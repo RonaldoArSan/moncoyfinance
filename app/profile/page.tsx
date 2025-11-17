@@ -19,6 +19,13 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user) setForm({ name: user.name || "", email: user.email || "" })
+    // Debug: Verificar URL da foto
+    if (user?.photo_url) {
+      console.log('=== DEBUG AVATAR ===')
+      console.log('Photo URL:', user.photo_url)
+      console.log('User ID:', user.id)
+      console.log('===================')
+    }
   }, [user])
 
   const planLabel = useMemo(() => {
@@ -134,7 +141,7 @@ export default function ProfilePage() {
           <CardContent className="space-y-4">
             <div className="flex items-center space-x-4">
               <Avatar className="w-20 h-20">
-                <AvatarImage src={user?.photo_url || "/diverse-user-avatars.png"} alt={user?.name || "Usuário"} />
+                <AvatarImage src={user?.photo_url || ""} alt={user?.name || "Usuário"} />
                 <AvatarFallback className="text-lg">{initials}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col gap-2">

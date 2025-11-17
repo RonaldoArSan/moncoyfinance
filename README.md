@@ -3,12 +3,17 @@
 Moncoy Finance é uma plataforma de gestão financeira pessoal com recursos de inteligência artificial, integração com Stripe, autenticação social (Google) e visual moderno com Tailwind CSS.
 
 ## Funcionalidades
-- Análise inteligente de gastos e sugestões de orçamento via IA
-- Gerenciamento de planos (Básico, Profissional, Premium)
-- Upload e exibição de foto de perfil
-- Autenticação com Google
-- Portal de cobrança Stripe
-- Interface responsiva e moderna
+- 🤖 Análise inteligente de gastos e sugestões de orçamento via IA (OpenAI GPT-4)
+- 📸 Upload e análise automática de comprovantes com IA Vision (Plano PRO/Premium)
+- 💳 Gerenciamento de planos com Stripe (Básico, Profissional, Premium)
+- 👤 Upload e exibição de foto de perfil com otimização automática
+- 🔐 Autenticação com Google (OAuth 2.0)
+- 💰 Portal de cobrança Stripe para gerenciamento de assinaturas
+- 📊 Dashboard financeiro com insights e métricas
+- 🎯 Gerenciamento de metas financeiras
+- 📈 Rastreamento de investimentos
+- 🔄 Transações recorrentes automáticas
+- 📱 Interface responsiva e moderna
 
 ## Tecnologias
 - Next.js (App Router)
@@ -29,7 +34,23 @@ Moncoy Finance é uma plataforma de gestão financeira pessoal com recursos de i
    pnpm install
    ```
 3. Configure as variáveis de ambiente:
-   - Crie um arquivo `.env.local` com as chaves do Supabase e Stripe.
+   - Crie um arquivo `.env.local` na raiz do projeto:
+   ```env
+   # Supabase
+   NEXT_PUBLIC_SUPABASE_URL=sua-url-do-supabase
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-anon-key-do-supabase
+   
+   # Stripe
+   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=sua-publishable-key-do-stripe
+   STRIPE_SECRET_KEY=sua-secret-key-do-stripe
+   STRIPE_WEBHOOK_SECRET=seu-webhook-secret (para produção)
+   
+   # OpenAI (para análise de IA e comprovantes)
+   OPENAI_API_KEY=sua-api-key-do-openai
+   
+   # Next.js
+   NEXT_PUBLIC_SITE_URL=http://localhost:3000
+   ```
 4. Rode o projeto:
    ```bash
    pnpm run dev

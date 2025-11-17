@@ -31,11 +31,14 @@ export function useTransactions() {
 
   const createTransaction = async (transaction: Omit<Transaction, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     try {
+      console.log('🔵 Hook: Chamando API para criar transação...')
       const newTransaction = await transactionsApi.createTransaction(transaction)
+      console.log('🔵 Hook: Transação criada, atualizando estado local...')
       setTransactions(prev => [newTransaction, ...prev])
+      console.log('🔵 Hook: Estado atualizado com sucesso!')
       return newTransaction
     } catch (error) {
-      console.error('Erro ao criar transação:', error)
+      console.error('❌ Hook: Erro ao criar transação:', error)
       throw error
     }
   }
