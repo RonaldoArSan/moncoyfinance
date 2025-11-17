@@ -39,19 +39,19 @@ http://localhost:3000/reset-password
 
 Acesse: `Authentication → Email Templates → Reset Password`
 
-**Template Recomendado:**
+**Template Recomendado (use {{ .ConfirmationURL }} do Supabase):**
 ```html
 <h2>Redefinir Senha</h2>
 <p>Você solicitou a redefinição de senha para sua conta.</p>
 <p>Clique no botão abaixo para criar uma nova senha:</p>
-<p><a href="{{ .SiteURL }}/auth/callback?type=recovery&token_hash={{ .TokenHash }}">Redefinir Senha</a></p>
+<p><a href="{{ .ConfirmationURL }}">Redefinir Senha</a></p>
 <p>Ou copie e cole este link no seu navegador:</p>
-<p>{{ .SiteURL }}/auth/callback?type=recovery&token_hash={{ .TokenHash }}</p>
+<p>{{ .ConfirmationURL }}</p>
 <p>Este link expira em 1 hora.</p>
 <p>Se você não solicitou esta redefinição, ignore este email.</p>
 ```
 
-**Importante:** Use `{{ .SiteURL }}` em vez de `{{ .ConfirmationURL }}` para ter mais controle sobre a URL.
+**IMPORTANTE:** Use `{{ .ConfirmationURL }}` em vez de construir a URL manualmente. O Supabase gerará automaticamente a URL correta com todos os parâmetros necessários.
 
 ### 3. Fluxo de Autenticação
 

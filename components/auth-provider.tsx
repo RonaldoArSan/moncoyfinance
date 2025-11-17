@@ -144,6 +144,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUserSettings(null)
         } else if (event === 'SIGNED_IN' && session?.user) {
           console.log('✨ User signed in:', session.user.email)
+          
+          // Se estiver em /reset-password, NÃO processar o usuário ainda
+          // O usuário só deve ser processado após redefinir a senha
+          if (pathname === '/reset-password') {
+            console.log('🔑 User signed in for password reset, skipping profile load')
+            setUser(session.user as any)
+            return
+          }
+          
           isProcessing = true
           await handleAuthUser(session.user)
           isProcessing = false

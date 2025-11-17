@@ -30,7 +30,8 @@ export default function ClientLayout({
   const isAuthPage =
     pathname === "/login" ||
     pathname === "/register" ||
-    pathname === "/forgot-password"
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password"
 
   const isAdminPage = pathname?.startsWith("/admin")
 
