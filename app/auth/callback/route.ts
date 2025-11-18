@@ -74,6 +74,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(resetUrl)
   }
 
+  // 🔑 FALLBACK: Se tiver token_hash MAS não tiver type=recovery, assumir que é recovery
+  if (!type && (tokenHash || token) && !code && !error) {
+    logger.warn('⚠️ token_hash found without type=recovery parameter. Email template may be misconfigured. Assuming password recovery.')
+    const resetUrl = new URL('/reset-password', requestUrl.origin)
+    resetUrl.searchParams.set('type', 'recovery')
+    if (tokenHash) resetUrl.searchParams.set('token_hash', tokenHash)
+    if (token) resetUrl.searchParams.set('token', token)
+    return NextResponse.redirect(resetUrl)
+  }
+
   // Se houver erro no OAuth, redirecionar para login com mensagem
   if (error) {
     logger.error('❌ OAuth error detected:', { 
