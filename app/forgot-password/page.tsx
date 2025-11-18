@@ -73,7 +73,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-md space-y-8">
         {/* Logo/Brand */}
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-primary mb-2">Moncoy</h1>
+          <h1 className="text-3xl font-bold text-primary mb-2">Moncoy Finance</h1>
           <p className="text-muted-foreground">Recupere o acesso à sua conta</p>
         </div>
 
