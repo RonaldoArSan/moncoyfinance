@@ -1,5 +1,26 @@
 # 🔧 CORREÇÃO DE ERROS - Build Vercel, Google OAuth e Reset Password
 
+## 🎯 RESUMO EXECUTIVO
+
+| Problema | Status | Solução | Onde Configurar |
+|----------|--------|---------|-----------------|
+| **1. Build Vercel** | ✅ Resolvido | `pnpm install` + commit | Terminal local |
+| **2. Google OAuth** | ⏳ Aguardando | Configurar URIs | [Google Cloud Console](https://console.cloud.google.com/apis/credentials) |
+| **3. Reset Password** | ⏳ Aguardando | Atualizar template | [Supabase Email Templates](https://supabase.com/dashboard/project/jxpgiqmwugsqpvrftmhl/auth/templates) |
+
+### 🚨 ATENÇÃO - Root Cause Reset Password
+
+O email de reset está usando **`{{ .ConfirmationURL }}`** (OAuth code) ao invés de **`{{ .Token }}`** (OTP token).
+
+```
+❌ ERRADO:  {{ .ConfirmationURL }}  → gera: /auth/callback?code=pkce_xxx  (não funciona)
+✅ CORRETO: {{ .Token }}             → gera: /reset-password?token=otp_xxx (funciona!)
+```
+
+**Resultado:** Link do email redireciona para `/login` com erro ao invés de abrir `/reset-password`.
+
+---
+
 ## ✅ PROBLEMA 1: Build Vercel - pnpm-lock.yaml desatualizado
 
 **RESOLVIDO:** Execute no terminal:
@@ -293,8 +314,8 @@ https://moncoyfinance.com
 
 ### Vercel
 - [x] pnpm-lock.yaml atualizado
-- [ ] Git commit e push
-- [ ] Aguardar novo deploy
+- [X] Git commit e push
+- [X] Aguardar novo deploy
 
 ### Google OAuth
 - [ ] Origens JavaScript configuradas

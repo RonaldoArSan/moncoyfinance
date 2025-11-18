@@ -25,45 +25,69 @@ function ResetPasswordForm() {
   const supabase = createClient()
 
   useEffect(() => {
-    // Verificar se há tokens de recuperação na URL
-    const token = searchParams.get('token')
-    const type = searchParams.get('type')
-    
+    // Verificar se há tokens de recuperação na URL (suportar múltiplos formatos)
+    const qpToken = searchParams.get('token') || searchParams.get('token_hash')
+    const type = searchParams.get('type') || 'recovery'
+
+    let hashToken: string | null = null
+    if (typeof window !== 'undefined' && !qpToken) {
+      const hash = window.location.hash || ''
+      // Ex.: #token=otp_xxx&type=recovery ou #token_hash=xxx&type=recovery
+      const hashParams = new URLSearchParams(hash.replace(/^#/, ''))
+      hashToken = hashParams.get('token') || hashParams.get('token_hash')
+    }
+
+    const token = qpToken || hashToken
+
     console.log('🔐 Reset password page loaded:', {
       hasToken: !!token,
-      tokenValue: token?.substring(0, 20) + '...',
+      tokenPreview: token ? token.substring(0, 16) + '…' : null,
       type,
-      allParams: Object.fromEntries(searchParams.entries())
+      allParams: Object.fromEntries(searchParams.entries()),
+      hashPresent: typeof window !== 'undefined' ? !!(window.location.hash) : false
     })
-    
-    // Se tiver token de recovery, verificar OTP
-    if (token && type === 'recovery') {
-      console.log('🔄 Verifying OTP with token')
-      
-      supabase.auth.verifyOtp({
-        token_hash: token,
-        type: 'recovery'
-      }).then((result: { data: any; error: any }) => {
-        if (result.error) {
-          console.error('❌ Error verifying OTP:', result.error)
-          
-          // Mensagens de erro específicas
-          if (result.error.message?.includes('expired')) {
-            setError('Link de recuperação expirado. Solicite um novo link.')
-          } else if (result.error.message?.includes('invalid')) {
-            setError('Link de recuperação inválido. Solicite um novo link.')
+
+    async function verify() {
+      if (!token || type !== 'recovery') {
+        console.warn('⚠️ No valid recovery token found in URL')
+        setError('Link de recuperação inválido. Por favor, solicite um novo link em "Esqueci minha senha".')
+        return
+      }
+
+      console.log('🔄 Verifying OTP (trying token_hash first)')
+      try {
+        const res1 = await supabase.auth.verifyOtp({ token_hash: token, type: 'recovery' })
+        if (res1.error) {
+          console.warn('⚠️ token_hash verification failed, trying raw token', res1.error?.message)
+          const res2 = await supabase.auth.verifyOtp({
+            // Algumas configurações exigem o campo token (não hash)
+            // https://supabase.com/docs/reference/javascript/auth-verifyotp
+            token,
+            type: 'recovery'
+          } as any)
+
+          if (res2.error) {
+            console.error('❌ Error verifying OTP:', res2.error)
+            if (res2.error.message?.includes('expired')) {
+              setError('Link de recuperação expirado. Solicite um novo link.')
+            } else if (res2.error.message?.includes('invalid')) {
+              setError('Link de recuperação inválido. Solicite um novo link.')
+            } else {
+              setError('Erro ao validar link de recuperação. Tente novamente.')
+            }
           } else {
-            setError('Erro ao validar link de recuperação. Tente novamente.')
+            console.log('✅ OTP verified successfully (raw token)')
           }
         } else {
-          console.log('✅ OTP verified successfully:', result.data)
-          // Token válido - usuário pode resetar senha
+          console.log('✅ OTP verified successfully (token_hash)')
         }
-      })
-    } else if (!token || !type) {
-      console.warn('⚠️ No valid recovery token found in URL')
-      setError('Link de recuperação inválido. Por favor, solicite um novo link em "Esqueci minha senha".')
+      } catch (e: any) {
+        console.error('💥 Unexpected verify error:', e)
+        setError('Erro inesperado ao validar o link. Solicite um novo link.')
+      }
     }
+
+    verify()
   }, [searchParams, supabase])
 
   const handleResetPassword = async (e: React.FormEvent) => {
