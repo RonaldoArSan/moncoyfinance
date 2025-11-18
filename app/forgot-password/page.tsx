@@ -28,7 +28,7 @@ export default function ForgotPasswordPage() {
     try {
       console.log('📧 Sending password reset email...')
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+        redirectTo: `${window.location.origin}/reset-password`,
       })
 
       if (error) {
@@ -52,7 +52,7 @@ export default function ForgotPasswordPage() {
     try {
       console.log('📧 Resending password reset email...')
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+        redirectTo: `${window.location.origin}/reset-password`,
       })
 
       if (error) {

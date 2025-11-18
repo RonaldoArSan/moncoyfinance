@@ -125,7 +125,8 @@ export async function GET(request: NextRequest) {
     try {
       logger.dev('🔄 Exchanging code for session...', {
         codePrefix: code.substring(0, 10) + '...',
-        origin: requestUrl.origin
+        origin: requestUrl.origin,
+        type
       })
       
       const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
@@ -140,13 +141,30 @@ export async function GET(request: NextRequest) {
           status: exchangeError.status,
           name: exchangeError.name,
           code: code.substring(0, 10) + '...',
+          type,
+          fullUrl: requestUrl.toString(),
           // Log detalhes específicos de erro
           isPKCEError,
           isExpiredCode: exchangeError.message?.includes('expired'),
           isInvalidCode: exchangeError.message?.includes('invalid'),
         })
         
-        // Se for erro de code verifier (PKCE) em password reset, redirecionar com instrução
+        // Se for erro de code verifier (PKCE) e for password reset, redirecionar para forgot-password
+        if (isPKCEError && type === 'recovery') {
+          logger.error('⚠️ PKCE error on password reset - link may be from old email template', {
+            message: 'Password reset links must use token_hash, not OAuth code',
+            solution: 'User should request a new password reset link'
+          })
+          
+          return NextResponse.redirect(
+            new URL(
+              `/forgot-password?error=${encodeURIComponent('Link de recuperação inválido. Por favor, solicite um novo link.')}`,
+              requestUrl.origin
+            )
+          )
+        }
+        
+        // Se for erro de code verifier (PKCE) em OAuth normal
         if (isPKCEError) {
           logger.error('⚠️ PKCE code verifier missing - Password reset link incompatível', {
             message: 'O link de email não é compatível com PKCE flow. Usuário deve usar link válido.',
@@ -161,7 +179,26 @@ export async function GET(request: NextRequest) {
           )
         }
         
-        // Outros erros
+        // Outros erros - tentar identificar se é password reset mesmo sem type=recovery
+        const seemsLikePasswordReset = exchangeError.message?.toLowerCase().includes('password') ||
+                                       exchangeError.message?.toLowerCase().includes('recovery') ||
+                                       exchangeError.message?.toLowerCase().includes('reset')
+        
+        if (seemsLikePasswordReset) {
+          logger.error('⚠️ Password reset error detected', {
+            error: exchangeError.message,
+            redirecting: 'to forgot-password'
+          })
+          
+          return NextResponse.redirect(
+            new URL(
+              `/forgot-password?error=${encodeURIComponent('Link de recuperação inválido. Solicite um novo.')}`,
+              requestUrl.origin
+            )
+          )
+        }
+        
+        // Outros erros - redirecionar para login
         return NextResponse.redirect(
           new URL(
             `/login?error=${encodeURIComponent('Erro ao autenticar. Tente novamente.')}`,

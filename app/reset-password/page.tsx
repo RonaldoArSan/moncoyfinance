@@ -26,83 +26,43 @@ function ResetPasswordForm() {
 
   useEffect(() => {
     // Verificar se há tokens de recuperação na URL
-    const accessToken = searchParams.get('access_token')
-    const refreshToken = searchParams.get('refresh_token')
     const token = searchParams.get('token')
-    const tokenHash = searchParams.get('token_hash')
     const type = searchParams.get('type')
     
     console.log('🔐 Reset password page loaded:', {
-      hasAccessToken: !!accessToken,
-      hasRefreshToken: !!refreshToken,
       hasToken: !!token,
-      hasTokenHash: !!tokenHash,
-      tokenHashValue: tokenHash,
+      tokenValue: token?.substring(0, 20) + '...',
       type,
       allParams: Object.fromEntries(searchParams.entries())
     })
     
-    // Verificar se access_token e refresh_token são válidos (não null/undefined/string "null")
-    const hasValidTokens = accessToken && accessToken !== 'null' && refreshToken && refreshToken !== 'null'
-    
-    // Tentar definir sessão com access_token/refresh_token (formato novo)
-    if (hasValidTokens) {
-      console.log('🔄 Setting session with access/refresh tokens from URL')
-      supabase.auth.setSession({
-        access_token: accessToken!,
-        refresh_token: refreshToken!
-      }).then((result: { data: unknown; error: unknown }) => {
-        if (result.error) {
-          console.error('❌ Error setting session:', result.error)
-          setError('Erro ao validar tokens de recuperação')
-        } else {
-          console.log('✅ Session set successfully:', result.data)
-        }
-      })
-    } 
-    // Tentar com token_hash (formato do email)
-    else if (tokenHash && type === 'recovery') {
-      console.log('🔄 Verifying OTP with token_hash:', tokenHash)
-      
-      // Remover prefixo pkce_ se existir
-      const cleanTokenHash = tokenHash.replace(/^pkce_/, '')
+    // Se tiver token de recovery, verificar OTP
+    if (token && type === 'recovery') {
+      console.log('🔄 Verifying OTP with token')
       
       supabase.auth.verifyOtp({
-        token_hash: cleanTokenHash,
+        token_hash: token,
         type: 'recovery'
-      }).then((result: { data: unknown; error: any }) => {
+      }).then((result: { data: any; error: any }) => {
         if (result.error) {
           console.error('❌ Error verifying OTP:', result.error)
           
-          // Se o erro for de token expirado, dar feedback específico
-          if (result.error.message?.includes('expired') || result.error.message?.includes('invalid')) {
+          // Mensagens de erro específicas
+          if (result.error.message?.includes('expired')) {
             setError('Link de recuperação expirado. Solicite um novo link.')
+          } else if (result.error.message?.includes('invalid')) {
+            setError('Link de recuperação inválido. Solicite um novo link.')
           } else {
             setError('Erro ao validar link de recuperação. Tente novamente.')
           }
         } else {
           console.log('✅ OTP verified successfully:', result.data)
+          // Token válido - usuário pode resetar senha
         }
       })
-    }
-    // Tentar com token simples
-    else if (token && type === 'recovery') {
-      console.log('🔄 Verifying OTP with token')
-      supabase.auth.verifyOtp({
-        token_hash: token,
-        type: 'recovery'
-      }).then((result: { data: unknown; error: unknown }) => {
-        if (result.error) {
-          console.error('❌ Error verifying OTP:', result.error)
-          setError('Link inválido ou expirado. Solicite um novo link de recuperação.')
-        } else {
-          console.log('✅ OTP verified successfully:', result.data)
-        }
-      })
-    } 
-    else {
-      console.warn('⚠️ No valid tokens found in URL')
-      setError('Link de recuperação inválido. Por favor, solicite um novo.')
+    } else if (!token || !type) {
+      console.warn('⚠️ No valid recovery token found in URL')
+      setError('Link de recuperação inválido. Por favor, solicite um novo link em "Esqueci minha senha".')
     }
   }, [searchParams, supabase])
 

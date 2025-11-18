@@ -29,29 +29,29 @@ https://moncoyfinance.com
 
 **Redirect URLs (adicionar todas):**
 ```
-https://moncoyfinance.com/auth/callback
 https://moncoyfinance.com/reset-password
-http://localhost:3000/auth/callback
 http://localhost:3000/reset-password
 ```
+
+**IMPORTANTE:** Remova as URLs antigas `/auth/callback` se existirem para password recovery.
 
 #### Passo 3: Configurar Email Template
 
 Acesse: `Authentication → Email Templates → Reset Password`
 
-**Template Recomendado (use {{ .ConfirmationURL }} do Supabase):**
+**Template CORRETO (NÃO use .ConfirmationURL para password reset!):**
 ```html
-<h2>Redefinir Senha</h2>
-<p>Você solicitou a redefinição de senha para sua conta.</p>
-<p>Clique no botão abaixo para criar uma nova senha:</p>
-<p><a href="{{ .ConfirmationURL }}">Redefinir Senha</a></p>
-<p>Ou copie e cole este link no seu navegador:</p>
-<p>{{ .ConfirmationURL }}</p>
+<h2>Redefinir Senha - MoncoyFinance</h2>
+<p>Você solicitou a redefinição de senha.</p>
+<p><a href="{{ .SiteURL }}/reset-password?token={{ .Token }}&type=recovery">Redefinir Senha</a></p>
+<p>Ou copie este link: {{ .SiteURL }}/reset-password?token={{ .Token }}&type=recovery</p>
 <p>Este link expira em 1 hora.</p>
-<p>Se você não solicitou esta redefinição, ignore este email.</p>
 ```
 
-**IMPORTANTE:** Use `{{ .ConfirmationURL }}` em vez de construir a URL manualmente. O Supabase gerará automaticamente a URL correta com todos os parâmetros necessários.
+**CRÍTICO:** 
+- Use `{{ .Token }}` (não `.TokenHash` ou `.ConfirmationURL`)
+- Redirecione direto para `/reset-password` (não para `/auth/callback`)
+- Adicione `&type=recovery` na URL
 
 ### 3. Fluxo de Autenticação
 
