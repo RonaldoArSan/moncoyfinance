@@ -27,7 +27,7 @@ export interface Transaction {
   description: string
   amount: number
   type: 'income' | 'expense'
-  category_id: string
+  category_id?: string | null
   date: string
   payment_method: string
   is_recurring: boolean
@@ -36,6 +36,7 @@ export interface Transaction {
   status?: 'pending' | 'completed' | 'overdue' | 'due_soon'
   priority?: 'low' | 'medium' | 'high'
   notes?: string
+  merchant?: string | null
   created_at: string
   updated_at: string
   category?: Category
@@ -94,7 +95,7 @@ export interface RecurringTransaction {
   description: string
   amount: number
   type: 'income' | 'expense'
-  category_id: string
+  category_id?: string | null
   frequency: 'daily' | 'weekly' | 'monthly' | 'yearly'
   start_date: string
   end_date?: string | null

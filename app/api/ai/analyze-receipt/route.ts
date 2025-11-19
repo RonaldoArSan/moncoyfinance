@@ -18,26 +18,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validar tipo de arquivo
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    // Validar tipo de arquivo (imagens e PDFs)
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf']
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: 'Tipo de arquivo não suportado. Use JPEG, PNG ou WebP' },
+        { error: 'Tipo de arquivo não suportado. Use JPEG, PNG, WebP ou PDF' },
         { status: 400 }
       )
     }
 
-    // Converter para base64
+    // Converter arquivo para base64
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    const base64Image = buffer.toString('base64')
-    const imageUrl = `data:${file.type};base64,${base64Image}`
-
+    
     // Prompt para extração de dados
     const systemPrompt = `Você é um assistente especializado em extrair dados de comprovantes, notas fiscais e recibos brasileiros.
 
 INSTRUÇÕES:
-1. Analise cuidadosamente a imagem fornecida
+1. Analise cuidadosamente o documento fornecido
 2. Identifique e extraia TODAS as informações visíveis
 3. Para a descrição, seja específico sobre o que foi comprado/vendido
 4. Para o valor, considere SEMPRE o VALOR TOTAL FINAL (após descontos, taxas, etc.)
@@ -70,20 +68,7 @@ IMPORTANTE:
 - Se a data não estiver visível, use a data de hoje
 - Seja preciso e objetivo nas descrições`
 
-    // Chamar OpenAI Vision API
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini', // Modelo com suporte a visão
-      messages: [
-        {
-          role: 'system',
-          content: systemPrompt
-        },
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: `Analise este comprovante de ${type === 'income' ? 'RECEITA (entrada de dinheiro)' : 'DESPESA (saída de dinheiro)'} e extraia TODOS os dados visíveis no formato JSON solicitado.
+    const userPrompt = `Analise este comprovante de ${type === 'income' ? 'RECEITA (entrada de dinheiro)' : 'DESPESA (saída de dinheiro)'} e extraia TODOS os dados visíveis no formato JSON solicitado.
 
 EXEMPLO DE RESPOSTA ESPERADA:
 {
@@ -93,21 +78,93 @@ EXEMPLO DE RESPOSTA ESPERADA:
   "merchant": "Supermercado Extra",
   "category": "alimentação"
 }`
+
+    let completion
+
+    // Para PDFs, tentar extrair texto de forma simples
+    if (file.type === 'application/pdf') {
+      try {
+        // Tentar extrair texto do PDF de forma básica
+        // PDFs de texto simples têm o conteúdo legível no buffer
+        const pdfText = buffer.toString('latin1')
+        
+        // Extrair texto entre marcadores de stream do PDF
+        const textMatches = pdfText.match(/\(([^)]+)\)/g)
+        let extractedText = ''
+        
+        if (textMatches) {
+          extractedText = textMatches
+            .map(match => match.slice(1, -1)) // Remove parênteses
+            .join(' ')
+            .replace(/\\n/g, '\n')
+            .replace(/\\/g, '')
+            .trim()
+        }
+
+        if (!extractedText || extractedText.length < 20) {
+          return NextResponse.json(
+            { error: 'Não foi possível extrair texto do PDF. Por favor, converta o PDF para imagem (PNG/JPEG) ou tire uma captura de tela.' },
+            { status: 400 }
+          )
+        }
+
+        // Analisar o texto extraído
+        completion = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt
             },
             {
-              type: 'image_url',
-              image_url: {
-                url: imageUrl,
-                detail: 'high'
-              }
+              role: 'user',
+              content: `${userPrompt}\n\nTexto extraído do comprovante:\n${extractedText}`
             }
-          ]
-        }
-      ],
-      temperature: 0.2, // Reduzido para mais precisão
-      max_tokens: 500,
-      response_format: { type: "json_object" } // Forçar resposta JSON
-    })
+          ],
+          temperature: 0.2,
+          max_tokens: 500,
+          response_format: { type: "json_object" }
+        })
+      } catch (pdfError) {
+        return NextResponse.json(
+          { error: 'Erro ao processar PDF. Por favor, converta para imagem (PNG/JPEG) ou tire uma captura de tela.' },
+          { status: 400 }
+        )
+      }
+    } else {
+      // Para imagens, usar Vision API diretamente
+      const base64Image = buffer.toString('base64')
+      const imageUrl = `data:${file.type};base64,${base64Image}`
+
+      completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: systemPrompt
+          },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: userPrompt
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: imageUrl,
+                  detail: 'high'
+                }
+              }
+            ]
+          }
+        ],
+        temperature: 0.2,
+        max_tokens: 500,
+        response_format: { type: "json_object" }
+      })
+    }
 
     const responseText = completion.choices[0]?.message?.content || '{}'
     
