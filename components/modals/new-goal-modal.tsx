@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar, Target, Settings, Loader2 } from "lucide-react"
 import { ManageCategoriesModal } from "./manage-categories-modal"
-import { useGoals } from "@/hooks/use-goals"
+import { useGoalsQuery } from "@/hooks/use-goals-query"
 
 interface NewGoalModalProps {
   open: boolean

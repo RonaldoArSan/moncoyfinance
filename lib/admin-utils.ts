@@ -6,6 +6,8 @@
 
 // Update the import path to the correct relative location
 import { createClient } from '../lib/supabase/server'
+import { logger } from './logger'
+import { ADMIN_CONFIG } from './admin-config'
 
 export interface AdminUser {
   id: string

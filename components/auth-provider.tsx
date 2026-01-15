@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { userApi } from '@/lib/api'
 import { logger } from '@/lib/logger'
+import { ADMIN_CONFIG } from '@/lib/admin-config'
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import type { 
   AuthContextType, 
@@ -16,13 +17,6 @@ import type {
 } from '@/types/auth'
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
-
-// Admin emails - isso deveria vir de uma configuração mais segura
-const ADMIN_EMAILS = [
-  'admin@financeira.com',
-  'ronald@financeira.com',
-  process.env.NEXT_PUBLIC_ADMIN_EMAIL
-].filter(Boolean)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
@@ -52,8 +46,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [pathname])
 
-  // Verificar se é admin
-  const isAdmin = user?.email ? ADMIN_EMAILS.includes(user.email) : false
+  // Verificar se é admin usando configuração centralizada
+  const isAdmin = ADMIN_CONFIG.isAdmin(user?.email)
 
   // Inicializar sessão
   useEffect(() => {
@@ -62,17 +56,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initializeAuth = async () => {
       try {
-        console.log('🔄 Initializing auth...')
+        logger.dev('🔄 Initializing auth...')
         const { data: { session } } = await supabase.auth.getSession()
         
         if (mounted && !isProcessing) {
           if (session?.user) {
-            console.log('✅ Session found:', session.user.email)
+            logger.dev('✅ Session found:', session.user.email)
             isProcessing = true
             await handleAuthUser(session.user)
             isProcessing = false
           } else {
-            console.log('❌ No session found')
+            logger.dev('❌ No session found')
             setUser(null)
             setUserProfile(null)
             setUserSettings(null)
@@ -80,8 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setLoading(false)
         }
       } catch (error) {
-        console.error('❌ Error initializing auth:', error)
-        logger.error('Error initializing auth:', error)
+        logger.error('❌ Error initializing auth:', error)
         if (mounted) {
           setLoading(false)
           isProcessing = false
@@ -95,17 +88,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session: Session | null) => {
         if (!mounted || isProcessing) {
-          console.log('⏭️ Skipping auth change (not mounted or processing):', event)
+          logger.dev('⏭️ Skipping auth change (not mounted or processing):', event)
           return
         }
 
-        console.log('🔔 Auth state change:', event, session?.user?.email)
-        logger.dev('Auth state change:', event)
+        logger.dev('🔔 Auth state change:', event, session?.user?.email)
 
         if (event === 'SIGNED_OUT' || (!session?.user && event !== 'INITIAL_SESSION')) {
-          console.log('👋 User signed out')
-          console.log('📍 Current pathname:', pathname)
-          console.log('🔧 Current mode:', mode)
+          logger.dev('👋 User signed out')
+          logger.dev('📍 Current pathname:', pathname)
+          logger.dev('🔧 Current mode:', mode)
           setUser(null)
           setUserProfile(null)
           setUserSettings(null)
@@ -123,27 +115,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             '/auth/callback'
           ]
           const isPublicRoute = publicRoutes.some(route => pathname?.startsWith(route))
-          console.log('🔍 isPublicRoute check:', { pathname, isPublicRoute, publicRoutes })
+          logger.dev('🔍 isPublicRoute check:', { pathname, isPublicRoute, publicRoutes })
           
           if (!isPublicRoute) {
-            console.log('⚠️ Not a public route, redirecting based on mode:', mode)
+            logger.dev('⚠️ Not a public route, redirecting based on mode:', mode)
             if (mode === 'admin') {
-              console.log('↪️ Redirecting to admin login')
+              logger.dev('↪️ Redirecting to admin login')
               router.push('/admin/login')
             } else if (mode === 'user') {
-              console.log('↪️ Redirecting to user login')
+              logger.dev('↪️ Redirecting to user login')
               router.push('/login')
             }
           } else {
-            console.log('✅ Public route detected, no redirect needed')
+            logger.dev('✅ Public route detected, no redirect needed')
           }
         } else if (event === 'INITIAL_SESSION' && !session?.user) {
-          console.log('📋 Initial session: No user found')
+          logger.dev('📋 Initial session: No user found')
           setUser(null)
           setUserProfile(null)
           setUserSettings(null)
         } else if (event === 'SIGNED_IN' && session?.user) {
-          console.log('✨ User signed in:', session.user.email)
+          logger.dev('✨ User signed in:', session.user.email)
           isProcessing = true
           await handleAuthUser(session.user)
           isProcessing = false
@@ -154,7 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     )
 
     return () => {
-      console.log('🧹 Cleaning up auth subscription')
+      logger.dev('🧹 Cleaning up auth subscription')
       mounted = false
       subscription.unsubscribe()
     }
@@ -163,11 +155,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Processar usuário autenticado
   const handleAuthUser = async (authUser: any) => {
     try {
-      console.log('👤 [AuthProvider] Handling auth user:', { id: authUser.id, email: authUser.email })
+      logger.dev('👤 [AuthProvider] Handling auth user:', { id: authUser.id, email: authUser.email })
       
       // Evitar processamento duplo do mesmo usuário
       if (user?.id === authUser.id && userProfile) {
-        console.log('⏭️ [AuthProvider] User already processed, skipping')
+        logger.dev('⏭️ [AuthProvider] User already processed, skipping')
         return
       }
 
@@ -182,7 +174,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setUser(formattedUser)
-      console.log('✅ [AuthProvider] User state updated')
+      logger.dev('✅ [AuthProvider] User state updated')
       
       // Verificar se está em página pública (não carregar perfil)
       const isPublicPage = pathname?.startsWith('/landingpage') || 
@@ -194,38 +186,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Carregar perfil do usuário (exceto para modo público ou páginas públicas)
       if (mode !== 'public' && !isPublicPage) {
-        console.log('📋 [AuthProvider] Loading user profile (mode:', mode, 'pathname:', pathname, ')')
+        logger.dev('📋 [AuthProvider] Loading user profile (mode:', mode, 'pathname:', pathname, ')')
         try {
           const profile = await userApi.getCurrentUser()
-          console.log('✅ [AuthProvider] Profile loaded:', { id: profile?.id, plan: profile?.plan })
+          logger.dev('✅ [AuthProvider] Profile loaded:', { id: profile?.id, plan: profile?.plan })
           setUserProfile(profile)
 
           // Carregar configurações do usuário
           if (profile) {
-            console.log('⚙️ [AuthProvider] Loading user settings...')
+            logger.dev('⚙️ [AuthProvider] Loading user settings...')
             await loadUserSettings(profile.id)
           }
         } catch (error) {
-          console.error('❌ [AuthProvider] Error loading user profile:', error)
-          logger.error('Error loading user profile:', error)
+          logger.error('❌ [AuthProvider] Error loading user profile:', error)
           // Se não conseguir carregar o perfil, criar um
           try {
-            console.log('🆕 [AuthProvider] Attempting to create user profile...')
+            logger.dev('🆕 [AuthProvider] Attempting to create user profile...')
             const newProfile = await userApi.createUserProfile(authUser)
-            console.log('✅ [AuthProvider] Profile created:', newProfile.id)
+            logger.dev('✅ [AuthProvider] Profile created:', newProfile.id)
             setUserProfile(newProfile)
             await loadUserSettings(newProfile.id)
           } catch (createError) {
-            console.error('❌ [AuthProvider] Error creating user profile:', createError)
-            logger.error('Error creating user profile:', createError)
+            logger.error('❌ [AuthProvider] Error creating user profile:', createError)
           }
         }
       } else {
-        console.log('🔓 [AuthProvider] Public mode, skipping profile load')
+        logger.dev('🔓 [AuthProvider] Public mode, skipping profile load')
       }
     } catch (error) {
-      console.error('❌ [AuthProvider] Error handling auth user:', error)
-      logger.error('Error handling auth user:', error)
+      logger.error('❌ [AuthProvider] Error handling auth user:', error)
     }
   }
 

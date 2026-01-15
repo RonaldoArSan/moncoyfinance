@@ -37,7 +37,7 @@ export async function checkAILimit(): Promise<AIUsageResponse> {
 
     return await response.json()
   } catch (error) {
-    console.error('Error checking AI limit:', error)
+    logger.error('Error checking AI limit:', error)
     throw error
   }
 }
@@ -62,7 +62,7 @@ export async function incrementAIUsage(): Promise<{ success: boolean; remaining:
 
     return await response.json()
   } catch (error) {
-    console.error('Error incrementing AI usage:', error)
+    logger.error('Error incrementing AI usage:', error)
     throw error
   }
 }

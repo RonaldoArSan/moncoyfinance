@@ -8,14 +8,14 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { NewGoalModal } from "@/components/modals/new-goal-modal"
 import { Target, PlusCircle, Calendar, DollarSign, TrendingUp, Trash2, Plus } from "lucide-react"
 import { useState } from "react"
-import { useGoals } from "@/hooks/use-goals"
+import { useGoalsQuery } from "@/hooks/use-goals-query"
 
 export default function GoalsPage() {
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false)
   const [addValueGoalId, setAddValueGoalId] = useState<string | null>(null)
   const [addValueAmount, setAddValueAmount] = useState('')
   
-  const { goals, loading, updateGoal, deleteGoal } = useGoals()
+  const { goals, loading, updateGoal, deleteGoal } = useGoalsQuery()
 
   const getPriorityColor = (priority?: string) => {
     switch (priority) {

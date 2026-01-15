@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Mail, ArrowLeft, CheckCircle, Clock } from "lucide-react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase/client"
+import { logger } from "@/lib/logger"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
@@ -23,17 +24,17 @@ export default function ForgotPasswordPage() {
     setIsLoading(true)
 
     try {
-      console.log('📧 Sending password reset email...')
+      logger.dev('📧 Sending password reset email...')
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/callback`,
       })
 
       if (error) {
-        console.error('❌ Error sending reset email:', error)
+        logger.error('❌ Error sending reset email:', error)
         throw error
       }
 
-      console.log('✅ Reset email sent successfully')
+      logger.dev('✅ Reset email sent successfully')
       setIsEmailSent(true)
     } catch (error: any) {
       setError(error.message || "Erro ao enviar email de recuperação")
@@ -47,17 +48,17 @@ export default function ForgotPasswordPage() {
     setIsLoading(true)
     
     try {
-      console.log('📧 Resending password reset email...')
+      logger.dev('📧 Resending password reset email...')
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/callback`,
       })
 
       if (error) {
-        console.error('❌ Error resending email:', error)
+        logger.error('❌ Error resending email:', error)
         throw error
       }
       
-      console.log('✅ Reset email resent successfully')
+      logger.dev('✅ Reset email resent successfully')
     } catch (error: any) {
       setError(error.message || "Erro ao reenviar email")
     } finally {
@@ -66,7 +67,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-background to-secondary-50 dark:from-gray-900 dark:via-background dark:to-gray-800 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-primary-50 via-background to-secondary-50 dark:from-gray-900 dark:via-background dark:to-gray-800 p-4">
       <div className="w-full max-w-md space-y-8">
         {/* Logo/Brand */}
         <div className="text-center">
@@ -141,7 +142,7 @@ export default function ForgotPasswordPage() {
 
                   <div className="bg-warning-50 dark:bg-warning-900/20 border border-warning-200 dark:border-warning-800 rounded-lg p-3">
                     <div className="flex items-start space-x-2">
-                      <Clock className="w-4 h-4 text-warning-600 dark:text-warning-400 mt-0.5 flex-shrink-0" />
+                      <Clock className="w-4 h-4 text-warning-600 dark:text-warning-400 mt-0.5 shrink-0" />
                       <div className="text-xs text-warning-700 dark:text-warning-300">
                         <p className="font-medium">Não recebeu o email?</p>
                         <p>Verifique sua pasta de spam ou lixo eletrônico.</p>

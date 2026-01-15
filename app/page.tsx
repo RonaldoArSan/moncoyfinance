@@ -15,15 +15,15 @@ import {
   Lightbulb,
   Zap,
 } from "lucide-react"
-import { useFinancialSummary } from "@/hooks/use-financial-summary"
-import { useTransactions } from "@/hooks/use-transactions"
+import { useDashboardData } from "@/hooks/use-dashboard-data"
 import { useBudget } from "@/hooks/use-budget"
 import { useInsights } from "@/hooks/use-insights"
 
 export default function Dashboard() {
   const [showNewTransaction, setShowNewTransaction] = useState(false)
-  const summary = useFinancialSummary()
-  const { transactions, loading: transactionsLoading } = useTransactions()
+  
+  // Hook consolidado busca todos os dados em paralelo
+  const { transactions, summary, loading: dashboardLoading } = useDashboardData()
   const { budgetItems, loading: budgetLoading } = useBudget()
   const { insights, loading: insightsLoading } = useInsights()
   
@@ -42,7 +42,7 @@ export default function Dashboard() {
           <div className="text-right">
             <p className="text-sm text-white/70 font-medium">Saldo Total</p>
             <p className="text-3xl font-bold text-white text-shadow-md">
-              {summary.loading ? "Carregando..." : new Intl.NumberFormat('pt-BR', {
+              {dashboardLoading ? "Carregando..." : new Intl.NumberFormat('pt-BR', {
                 style: 'currency',
                 currency: 'BRL'
               }).format(summary.totalBalance)}
@@ -66,7 +66,7 @@ export default function Dashboard() {
             <CardDescription className="text-muted-foreground font-medium">Suas últimas movimentações financeiras</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {transactionsLoading ? (
+            {dashboardLoading ? (
               // Loading skeleton
               Array.from({ length: 4 }).map((_, index) => (
                 <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">

@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import { ThemeProvider } from "@/components/theme-provider"
+import { ReactQueryProvider } from "@/components/react-query-provider"
 import { AuthProvider } from "@/components/auth-provider"
 import { UserGuard, AdminGuard, PublicGuard } from "@/components/auth-guards"
 import { UserPlanProvider } from "@/contexts/user-plan-context"
@@ -30,7 +31,8 @@ export default function ClientLayout({
   const isAuthPage =
     pathname === "/login" ||
     pathname === "/register" ||
-    pathname === "/forgot-password"
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password"
 
   const isAdminPage = pathname?.startsWith("/admin")
 
@@ -68,14 +70,16 @@ export default function ClientLayout({
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      <AuthProvider>
-        <SettingsProvider>
-          <UserPlanProvider>
-            {getPageLayout()}
-            <CookieBanner />
-          </UserPlanProvider>
-        </SettingsProvider>
-      </AuthProvider>
+      <ReactQueryProvider>
+        <AuthProvider>
+          <SettingsProvider>
+            <UserPlanProvider>
+              {getPageLayout()}
+              <CookieBanner />
+            </UserPlanProvider>
+          </SettingsProvider>
+        </AuthProvider>
+      </ReactQueryProvider>
     </ThemeProvider>
   )
 }

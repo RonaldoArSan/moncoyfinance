@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
 import { transactionsApi, categoriesApi, recurringTransactionsApi } from '@/lib/api'
+import { logger } from '@/lib/logger'
+import { useAuth } from '@/components/auth-provider'
 import type { Transaction, Category, RecurringTransaction } from '@/lib/supabase'
 
 export function useTransactions() {
+  const { userProfile } = useAuth()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>([])
@@ -11,10 +14,11 @@ export function useTransactions() {
   const loadTransactions = async () => {
     try {
       setLoading(true)
-      const data = await transactionsApi.getTransactions()
+      // Pass userId from context to avoid redundant Supabase call
+      const data = await transactionsApi.getTransactions(undefined, userProfile?.id)
       setTransactions(data)
     } catch (error) {
-      console.error('Erro ao carregar transações:', error)
+      logger.error('Erro ao carregar transações:', error)
     } finally {
       setLoading(false)
     }
@@ -22,20 +26,22 @@ export function useTransactions() {
 
   const loadCategories = async () => {
     try {
-      const data = await categoriesApi.getCategories()
+      // Pass userId from context to avoid redundant Supabase call
+      const data = await categoriesApi.getCategories(undefined, userProfile?.id)
       setCategories(data)
     } catch (error) {
-      console.error('Erro ao carregar categorias:', error)
+      logger.error('Erro ao carregar categorias:', error)
     }
   }
 
   const createTransaction = async (transaction: Omit<Transaction, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     try {
-      const newTransaction = await transactionsApi.createTransaction(transaction)
+      // Pass userId from context
+      const newTransaction = await transactionsApi.createTransaction(transaction, userProfile?.id)
       setTransactions(prev => [newTransaction, ...prev])
       return newTransaction
     } catch (error) {
-      console.error('Erro ao criar transação:', error)
+      logger.error('Erro ao criar transação:', error)
       throw error
     }
   }
@@ -45,7 +51,7 @@ export function useTransactions() {
       await transactionsApi.deleteTransaction(id)
       setTransactions(prev => prev.filter(t => t.id !== id))
     } catch (error) {
-      console.error('Erro ao deletar transação:', error)
+      logger.error('Erro ao deletar transação:', error)
       throw error
     }
   }
@@ -56,7 +62,7 @@ export function useTransactions() {
       setTransactions(prev => prev.map(t => t.id === id ? updatedTransaction : t))
       return updatedTransaction
     } catch (error) {
-      console.error('Erro ao atualizar transação:', error)
+      logger.error('Erro ao atualizar transação:', error)
       const errorMessage = typeof error === 'object' && error !== null && 'message' in error
         ? (error as { message?: string }).message
         : 'Erro desconhecido'

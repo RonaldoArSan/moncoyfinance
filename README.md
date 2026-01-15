@@ -20,21 +20,42 @@ Moncoy Finance é uma plataforma de gestão financeira pessoal com recursos de i
 - PNPM
 
 ## Como rodar localmente
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/seu-usuario/moncoy-finance-landing-page.git
-   ```
-2. Instale as dependências:
-   ```bash
-   pnpm install
-   ```
-3. Configure as variáveis de ambiente:
-   - Crie um arquivo `.env.local` com as chaves do Supabase e Stripe.
-4. Rode o projeto:
-   ```bash
-   pnpm run dev
-   ```
-5. Acesse `http://localhost:3000`
+
+### 1️⃣ Clone o repositório
+```bash
+git clone https://github.com/RonaldoArSan/moncoyfinance.git
+cd moncoyfinance
+```
+
+### 2️⃣ Instale as dependências
+```bash
+pnpm install
+```
+
+### 3️⃣ Configure as variáveis de ambiente
+
+**Opção A: Script Automático (Recomendado)**
+```powershell
+.\scripts\setup-env.ps1
+```
+
+**Opção B: Manual**
+```bash
+cp .env.local.example .env.local
+# Edite .env.local com suas keys
+```
+
+📚 **Guia completo**: [docs/ENV-SETUP-QUICKSTART.md](./docs/ENV-SETUP-QUICKSTART.md)
+
+### 4️⃣ Rode o projeto
+```bash
+pnpm run dev
+```
+
+### 5️⃣ Acesse
+```
+http://localhost:3000
+```
 
 ## Estrutura do Projeto
 ```

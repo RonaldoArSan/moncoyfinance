@@ -2,7 +2,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { useTransactions } from "@/hooks/use-transactions"
+import { useTransactionsQuery } from "@/hooks/use-transactions-query"
 import { Calendar, momentLocalizer } from "react-big-calendar"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"

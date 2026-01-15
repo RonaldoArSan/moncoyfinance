@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge"
 import { Calendar, Upload, Camera, FileText, Loader2, Crown, X, Settings } from "lucide-react"
 import { ManageCategoriesModal } from "./manage-categories-modal"
 import { useUserPlan, useFeatureAccess } from "@/contexts/user-plan-context"
-import { useTransactions } from "@/hooks/use-transactions"
+import { useTransactionsQuery } from "@/hooks/use-transactions-query"
 import { Checkbox } from "@/components/ui/checkbox"
 
 interface NewTransactionModalProps {

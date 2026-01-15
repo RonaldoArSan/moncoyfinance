@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
 import { goalsApi, categoriesApi } from '@/lib/api'
+import { logger } from '@/lib/logger'
+import { useAuth } from '@/components/auth-provider'
 import type { Goal, Category } from '@/lib/supabase'
 
 export function useGoals() {
+  const { userProfile } = useAuth()
   const [goals, setGoals] = useState<Goal[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
@@ -10,10 +13,10 @@ export function useGoals() {
   const loadGoals = async () => {
     try {
       setLoading(true)
-      const data = await goalsApi.getGoals()
+      const data = await goalsApi.getGoals(userProfile?.id)
       setGoals(data)
     } catch (error) {
-      console.error('Erro ao carregar metas:', error)
+      logger.error('Erro ao carregar metas:', error)
     } finally {
       setLoading(false)
     }
@@ -21,20 +24,20 @@ export function useGoals() {
 
   const loadCategories = async () => {
     try {
-      const data = await categoriesApi.getCategories('goal')
+      const data = await categoriesApi.getCategories('goal', userProfile?.id)
       setCategories(data)
     } catch (error) {
-      console.error('Erro ao carregar categorias:', error)
+      logger.error('Erro ao carregar categorias:', error)
     }
   }
 
   const createGoal = async (goal: Omit<Goal, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     try {
-      const newGoal = await goalsApi.createGoal(goal)
+      const newGoal = await goalsApi.createGoal(goal, userProfile?.id)
       setGoals(prev => [newGoal, ...prev])
       return newGoal
     } catch (error) {
-      console.error('Erro ao criar meta:', error)
+      logger.error('Erro ao criar meta:', error)
       throw error
     }
   }
@@ -45,7 +48,7 @@ export function useGoals() {
       setGoals(prev => prev.map(g => g.id === id ? updatedGoal : g))
       return updatedGoal
     } catch (error) {
-      console.error('Erro ao atualizar meta:', error)
+      logger.error('Erro ao atualizar meta:', error)
       throw error
     }
   }

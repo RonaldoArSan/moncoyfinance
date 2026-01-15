@@ -8,14 +8,14 @@ import { NewInvestmentModal } from "@/components/modals/new-investment-modal"
 import { ExportModal } from "@/components/modals/export-modal"
 import { TrendingUp, PlusCircle, DollarSign, BarChart3, Calculator, FileText, Eye, MoreHorizontal, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { useInvestments } from "@/hooks/use-investments"
+import { useInvestmentsQuery } from "@/hooks/use-investments-query"
 import { useUserPlan } from "@/contexts/user-plan-context"
 
 export default function InvestmentsPage() {
   const [isInvestmentModalOpen, setIsInvestmentModalOpen] = useState(false)
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
   
-  const { investments, loading, calculatePortfolioSummary, getAssetTypeDistribution, deleteInvestment } = useInvestments()
+  const { investments, loading, calculatePortfolioSummary, getAssetTypeDistribution, deleteInvestment } = useInvestmentsQuery()
   const { currentPlan } = useUserPlan()
   const isProfessional = ['pro', 'premium'].includes(currentPlan)
   

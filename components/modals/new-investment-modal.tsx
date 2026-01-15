@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar, TrendingUp, Settings, Loader2 } from "lucide-react"
 import { ManageCategoriesModal } from "./manage-categories-modal"
-import { useInvestments } from "@/hooks/use-investments"
+import { useInvestmentsQuery } from "@/hooks/use-investments-query"
 
 interface NewInvestmentModalProps {
   open: boolean

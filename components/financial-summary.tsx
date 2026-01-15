@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useFinancialSummary } from "@/hooks/use-financial-summary"
+import { useFinancialSummaryQuery } from "@/hooks/use-financial-summary-query"
 import {
   TrendingUp,
   TrendingDown,
@@ -13,7 +13,7 @@ import {
 } from "lucide-react"
 
 export function FinancialSummary() {
-  const summary = useFinancialSummary()
+  const summary = useFinancialSummaryQuery()
 
   if (summary.loading) {
     return (

@@ -26,7 +26,7 @@ export function useAI() {
       const usageData = await checkAILimit()
       setUsage(usageData)
     } catch (error) {
-      console.error('Error loading AI usage:', error)
+      logger.error('Error loading AI usage:', error)
       // Don't block the app if AI usage API fails
       // Set default values to prevent breaking
       setUsage({
@@ -78,7 +78,7 @@ export function useAI() {
       // Se a API de limites não está disponível (migração não aplicada),
       // permitir continuar mas avisar no console
       if (error.message?.includes('404') || error.message?.includes('pending')) {
-        console.warn('AI usage API not available yet. Continuing without limit checks.')
+        logger.warn('AI usage API not available yet. Continuing without limit checks.')
         shouldCheckLimit = false
       } else {
         toast({
@@ -137,14 +137,14 @@ export function useAI() {
             })
           }
         } catch (incrementError) {
-          console.error('Error incrementing usage:', incrementError)
+          logger.error('Error incrementing usage:', incrementError)
           // Não falhar a análise se o incremento falhar
         }
       }
 
       return result.analysis
     } catch (error) {
-      console.error('AI Analysis Error:', error)
+      logger.error('AI Analysis Error:', error)
       throw error
     } finally {
       setLoading(false)

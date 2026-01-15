@@ -1,21 +1,22 @@
 import { supabase } from '@/lib/supabase/client'
 import { logger } from '@/lib/logger'
+import { getAuthUserId, ensureUserId } from '@/lib/auth-helper'
 import type { Transaction, Goal, Investment, InvestmentTransaction, Category, User, RecurringTransaction, Commitment } from '@/lib/supabase/types'
 
 // User API functions
 export const userApi = {
   async getCurrentUser(): Promise<User | null> {
-    console.log('🔍 [API] Getting current user...')
+    logger.dev('🔍 [API] Getting current user...')
     
     const { data: { user } } = await supabase.auth.getUser()
-    console.log('🔍 [API] Auth user:', { id: user?.id, email: user?.email, hasUser: !!user })
+    logger.dev('🔍 [API] Auth user:', { id: user?.id, email: user?.email, hasUser: !!user })
     
     if (!user) {
-      console.log('❌ [API] No auth user found')
+      logger.dev('❌ [API] No auth user found')
       return null
     }
 
-    console.log('📡 [API] Fetching user profile from database...')
+    logger.dev('📡 [API] Fetching user profile from database...')
     const { data, error } = await supabase
       .from('users')
       .select('*')
@@ -23,22 +24,22 @@ export const userApi = {
       .maybeSingle()
 
     if (error) {
-      console.error('❌ [API] Error fetching user profile:', error)
+      logger.error('❌ [API] Error fetching user profile:', error)
       throw error
     }
     
     if (!data) {
-      console.log('⚠️ [API] User profile not found, creating...')
+      logger.dev('⚠️ [API] User profile not found, creating...')
       // If user doesn't exist in public.users, create profile
       return await userApi.createUserProfile(user)
     }
     
-    console.log('✅ [API] User profile found:', { id: data.id, email: data.email, plan: data.plan })
+    logger.dev('✅ [API] User profile found:', { id: data.id, email: data.email, plan: data.plan })
     return data
   },
 
   async createUserProfile(authUser: any): Promise<User> {
-    console.log('🆕 [API] Creating user profile...', { id: authUser.id, email: authUser.email })
+    logger.dev('🆕 [API] Creating user profile...', { id: authUser.id, email: authUser.email })
     
     const userData = {
       id: authUser.id,
@@ -49,7 +50,7 @@ export const userApi = {
       photo_url: authUser.user_metadata?.avatar_url || null // Foto do Google
     }
 
-    console.log('📝 [API] User data to insert:', userData)
+    logger.dev('📝 [API] User data to insert:', userData)
 
     const { data, error } = await supabase
       .from('users')
@@ -58,19 +59,18 @@ export const userApi = {
       .single()
 
     if (error) {
-      console.error('❌ [API] Error creating user profile:', error)
+      logger.error('❌ [API] Error creating user profile:', error)
       throw error
     }
 
-    console.log('✅ [API] User profile created successfully:', data.id)
+    logger.dev('✅ [API] User profile created successfully:', data.id)
 
     // Create default categories and settings (only if they don't exist)
     try {
       await userApi.createDefaultData(authUser.id)
     } catch (err) {
       // Ignore conflicts - data might already exist
-      console.log('ℹ️ [API] Default data already exists or error creating:', err)
-      logger.dev('Default data already exists or error creating:', err)
+      logger.dev('ℹ️ [API] Default data already exists or error creating:', err)
     }
     
     return data
@@ -116,14 +116,14 @@ export const userApi = {
 
 // Categories API functions
 export const categoriesApi = {
-  async getCategories(type?: string): Promise<Category[]> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return []
+  async getCategories(type?: string, userId?: string): Promise<Category[]> {
+    const uid = userId || await getAuthUserId()
+    if (!uid) return []
 
     let query = supabase
       .from('categories')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', uid)
       .order('name')
 
     if (type) {
@@ -135,13 +135,13 @@ export const categoriesApi = {
     return data || []
   },
 
-  async createCategory(category: Omit<Category, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<Category> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+  async createCategory(category: Omit<Category, 'id' | 'user_id' | 'created_at' | 'updated_at'>, userId?: string): Promise<Category> {
+    const uid = userId || await getAuthUserId()
+    if (!uid) throw new Error('Not authenticated')
 
     const { data, error } = await supabase
       .from('categories')
-      .insert({ ...category, user_id: user.id })
+      .insert({ ...category, user_id: uid })
       .select()
       .single()
 
@@ -185,9 +185,9 @@ export const categoriesApi = {
 
 // Transactions API functions
 export const transactionsApi = {
-  async getTransactions(limit?: number): Promise<Transaction[]> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return []
+  async getTransactions(limit?: number, userId?: string): Promise<Transaction[]> {
+    const uid = userId || await getAuthUserId()
+    if (!uid) return []
 
     let query = supabase
       .from('transactions')
@@ -195,7 +195,7 @@ export const transactionsApi = {
         *,
         category:categories(*)
       `)
-      .eq('user_id', user.id)
+      .eq('user_id', uid)
       .order('date', { ascending: false })
 
     if (limit) {
@@ -207,13 +207,13 @@ export const transactionsApi = {
     return data || []
   },
 
-  async createTransaction(transaction: Omit<Transaction, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<Transaction> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+  async createTransaction(transaction: Omit<Transaction, 'id' | 'user_id' | 'created_at' | 'updated_at'>, userId?: string): Promise<Transaction> {
+    const uid = userId || await getAuthUserId()
+    if (!uid) throw new Error('Not authenticated')
 
     const { data, error } = await supabase
       .from('transactions')
-      .insert({ ...transaction, user_id: user.id })
+      .insert({ ...transaction, user_id: uid })
       .select(`
         *,
         category:categories(*)
@@ -254,9 +254,9 @@ export const transactionsApi = {
 
 // Goals API functions
 export const goalsApi = {
-  async getGoals(): Promise<Goal[]> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return []
+  async getGoals(userId?: string): Promise<Goal[]> {
+    const uid = userId || await getAuthUserId()
+    if (!uid) return []
 
     const { data, error } = await supabase
       .from('goals')
@@ -264,20 +264,20 @@ export const goalsApi = {
         *,
         category:categories(*)
       `)
-      .eq('user_id', user.id)
+      .eq('user_id', uid)
       .order('created_at', { ascending: false })
 
     if (error) throw error
     return data || []
   },
 
-  async createGoal(goal: Omit<Goal, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<Goal> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+  async createGoal(goal: Omit<Goal, 'id' | 'user_id' | 'created_at' | 'updated_at'>, userId?: string): Promise<Goal> {
+    const uid = userId || await getAuthUserId()
+    if (!uid) throw new Error('Not authenticated')
 
     const { data, error } = await supabase
       .from('goals')
-      .insert({ ...goal, user_id: user.id })
+      .insert({ ...goal, user_id: uid })
       .select(`
         *,
         category:categories(*)
@@ -315,9 +315,9 @@ export const goalsApi = {
 
 // Investments API functions
 export const investmentsApi = {
-  async getInvestments(): Promise<Investment[]> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return []
+  async getInvestments(userId?: string): Promise<Investment[]> {
+    const uid = userId || await getAuthUserId()
+    if (!uid) return []
 
     const { data, error } = await supabase
       .from('investments')
@@ -325,16 +325,16 @@ export const investmentsApi = {
         *,
         category:categories(*)
       `)
-      .eq('user_id', user.id)
+      .eq('user_id', uid)
       .order('created_at', { ascending: false })
 
     if (error) throw error
     return data || []
   },
 
-  async createInvestment(investment: Omit<Investment, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<Investment> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+  async createInvestment(investment: Omit<Investment, 'id' | 'user_id' | 'created_at' | 'updated_at'>, userId?: string): Promise<Investment> {
+    const uid = userId || await getAuthUserId()
+    if (!uid) throw new Error('Not authenticated')
 
     const { data, error } = await supabase
       .from('investments')
@@ -358,9 +358,9 @@ export const investmentsApi = {
     if (error) throw error
   },
 
-  async getInvestmentTransactions(): Promise<InvestmentTransaction[]> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+  async getInvestmentTransactions(userId?: string): Promise<InvestmentTransaction[]> {
+    const uid = userId || await getAuthUserId()
+    if (!uid) throw new Error('Not authenticated')
 
     const { data, error } = await supabase
       .from('investment_transactions')
@@ -368,20 +368,20 @@ export const investmentsApi = {
         *,
         investment:investments(*)
       `)
-      .eq('user_id', user.id)
+      .eq('user_id', uid)
       .order('date', { ascending: false })
 
     if (error) throw error
     return data || []
   },
 
-  async createInvestmentTransaction(transaction: Omit<InvestmentTransaction, 'id' | 'user_id' | 'created_at'>): Promise<InvestmentTransaction> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+  async createInvestmentTransaction(transaction: Omit<InvestmentTransaction, 'id' | 'user_id' | 'created_at'>, userId?: string): Promise<InvestmentTransaction> {
+    const uid = userId || await getAuthUserId()
+    if (!uid) throw new Error('Not authenticated')
 
     const { data, error } = await supabase
       .from('investment_transactions')
-      .insert({ ...transaction, user_id: user.id })
+      .insert({ ...transaction, user_id: uid })
       .select(`
         *,
         investment:investments(*)
@@ -395,9 +395,9 @@ export const investmentsApi = {
 
 // Recurring Transactions API functions
 export const recurringTransactionsApi = {
-  async getRecurringTransactions(): Promise<RecurringTransaction[]> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return []
+  async getRecurringTransactions(userId?: string): Promise<RecurringTransaction[]> {
+    const uid = userId || await getAuthUserId()
+    if (!uid) return []
 
     const { data, error } = await supabase
       .from('recurring_transactions')
@@ -405,7 +405,7 @@ export const recurringTransactionsApi = {
         *,
         category:categories(*)
       `)
-      .eq('user_id', user.id)
+      .eq('user_id', uid)
       .eq('is_active', true)
       .order('created_at', { ascending: false })
 
@@ -413,13 +413,13 @@ export const recurringTransactionsApi = {
     return data || []
   },
 
-  async createRecurringTransaction(transaction: Omit<RecurringTransaction, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<RecurringTransaction> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+  async createRecurringTransaction(transaction: Omit<RecurringTransaction, 'id' | 'user_id' | 'created_at' | 'updated_at'>, userId?: string): Promise<RecurringTransaction> {
+    const uid = userId || await getAuthUserId()
+    if (!uid) throw new Error('Not authenticated')
 
     const { data, error } = await supabase
       .from('recurring_transactions')
-      .insert({ ...transaction, user_id: user.id })
+      .insert({ ...transaction, user_id: uid })
       .select(`
         *,
         category:categories(*)
@@ -454,15 +454,15 @@ export const recurringTransactionsApi = {
     if (error) throw error
   },
 
-  async generateRecurringTransactions(month: number, year: number): Promise<Transaction[]> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return []
+  async generateRecurringTransactions(month: number, year: number, userId?: string): Promise<Transaction[]> {
+    const uid = userId || await getAuthUserId()
+    if (!uid) return []
 
     // Get active recurring transactions
     const { data: recurring, error } = await supabase
       .from('recurring_transactions')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', uid)
       .eq('is_active', true)
 
     if (error) throw error
@@ -541,14 +541,14 @@ export const recurringTransactionsApi = {
 
 // Dashboard API functions
 export const dashboardApi = {
-  async getFinancialSummary() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+  async getFinancialSummary(userId?: string) {
+    const uid = userId || await getAuthUserId()
+    if (!uid) throw new Error('Not authenticated')
 
     const { data, error } = await supabase
       .from('user_financial_summary')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', uid)
       .single()
 
     if (error) throw error
@@ -558,14 +558,14 @@ export const dashboardApi = {
 
 // Commitments API functions
 export const commitmentsApi = {
-  async getCommitments(): Promise<Commitment[]> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return []
+  async getCommitments(userId?: string): Promise<Commitment[]> {
+    const uid = userId || await getAuthUserId()
+    if (!uid) return []
 
     const { data, error } = await supabase
       .from('commitments')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', uid)
       .order('date', { ascending: true })
 
     if (error) {
@@ -575,13 +575,13 @@ export const commitmentsApi = {
     return data || []
   },
 
-  async createCommitment(commitment: Omit<Commitment, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<Commitment> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+  async createCommitment(commitment: Omit<Commitment, 'id' | 'user_id' | 'created_at' | 'updated_at'>, userId?: string): Promise<Commitment> {
+    const uid = userId || await getAuthUserId()
+    if (!uid) throw new Error('Not authenticated')
 
     const { data, error } = await supabase
       .from('commitments')
-      .insert({ ...commitment, user_id: user.id })
+      .insert({ ...commitment, user_id: uid })
       .select()
       .single()
 
