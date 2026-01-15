@@ -23,11 +23,11 @@ function Read-HostWithDefault {
     )
     
     if ($Default) {
-        $input = Read-Host "$Prompt [$Default]"
-        if ([string]::IsNullOrWhiteSpace($input)) {
+        $userInput = Read-Host "$Prompt [$Default]"
+        if ([string]::IsNullOrWhiteSpace($userInput)) {
             return $Default
         }
-        return $input
+        return $userInput
     } else {
         return Read-Host $Prompt
     }

@@ -17,6 +17,7 @@ function ResetPasswordForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [sessionReady, setSessionReady] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
   
@@ -29,34 +30,46 @@ function ResetPasswordForm() {
     const accessToken = searchParams.get('access_token')
     const refreshToken = searchParams.get('refresh_token')
     
-    console.log('🔐 Reset password page loaded:', {
-      hasAccessToken: !!accessToken,
-      hasRefreshToken: !!refreshToken,
-      allParams: Object.fromEntries(searchParams.entries())
-    })
-    
-    if (accessToken && refreshToken) {
-      console.log('🔄 Setting session with tokens from URL')
-      // Definir a sessão com os tokens
-      supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken
-      }).then((result: { data: unknown; error: unknown }) => {
-        if (result.error) {
-          console.error('❌ Error setting session:', result.error)
-          setError('Erro ao validar tokens de recuperação')
-        } else {
-          console.log('✅ Session set successfully:', result.data)
+    const setupSession = async () => {
+      if (accessToken && refreshToken) {
+        try {
+          // Definir a sessão com os tokens
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          })
+
+          if (error) {
+            console.error('❌ Error setting session:', error)
+            setError('Link de recuperação inválido ou expirado. Solicite um novo.')
+            setSessionReady(false)
+          } else {
+            console.log('✅ Session restored successfully')
+            setSessionReady(true)
+          }
+        } catch (err) {
+          console.error('❌ Exception setting session:', err)
+          setError('Erro ao validar link de recuperação')
+          setSessionReady(false)
         }
-      })
-    } else {
-      console.warn('⚠️ No tokens found in URL')
+      } else {
+        console.warn('⚠️ No tokens found in URL - user may have navigated directly')
+        setError('Link de recuperação inválido. Por favor, solicite uma nova recuperação de senha.')
+        setSessionReady(false)
+      }
     }
+
+    setupSession()
   }, [searchParams, supabase])
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+
+    if (!sessionReady) {
+      setError("Sessão não está pronta. Por favor, use o link do email.")
+      return
+    }
 
     if (password.length < 8) {
       setError("A senha deve ter pelo menos 8 caracteres")
@@ -202,8 +215,8 @@ function ResetPasswordForm() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Redefinindo..." : "Redefinir Senha"}
+              <Button type="submit" className="w-full" disabled={loading || !sessionReady}>
+                {loading ? "Redefinindo..." : !sessionReady ? "Validando link..." : "Redefinir Senha"}
               </Button>
             </form>
 
