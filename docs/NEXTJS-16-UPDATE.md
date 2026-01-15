@@ -50,11 +50,24 @@ eslint: {
 
 **Depois**: Removido (use `next lint` diretamente)
 
-### 2. Aviso sobre Middleware
-**Mensagem**: `The "middleware" file convention is deprecated. Please use "proxy" instead.`
+### 2. Migração: middleware.ts → proxy.ts ✅
+**Motivo**: Convenção `middleware.ts` foi deprecated no Next.js 16
 
-**Status**: ⚠️ Aviso apenas - funcionalidade ainda suportada  
-**Ação Futura**: Considerar migrar para `proxy.ts` quando necessário
+**Antes**:
+```typescript
+// middleware.ts
+export async function middleware(req: NextRequest) { ... }
+```
+
+**Depois**:
+```typescript
+// proxy.ts
+export async function proxy(req: NextRequest) { ... }
+```
+
+**Resultado**: ✅ Aviso de deprecation removido
+
+📚 **Documentação completa**: [docs/MIGRATION-MIDDLEWARE-TO-PROXY.md](./MIGRATION-MIDDLEWARE-TO-PROXY.md)
 
 ---
 
@@ -114,6 +127,7 @@ eslint: {
 ### Imediatas ✅
 - [x] Atualizar Next.js para 16.1.2
 - [x] Remover config de eslint do next.config.mjs
+- [x] Migrar middleware.ts → proxy.ts
 - [x] Testar servidor
 
 ### Curto Prazo
@@ -122,7 +136,7 @@ eslint: {
 - [ ] Deploy em produção
 
 ### Longo Prazo
-- [ ] Considerar migração de middleware para proxy
+- [x] ~~Considerar migração de middleware para proxy~~ ✅ CONCLUÍDO
 - [ ] Atualizar pacote `vaul` quando disponível
 - [ ] Revisar e ativar type checking no build
 

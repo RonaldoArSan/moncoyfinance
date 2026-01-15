@@ -11,7 +11,7 @@ import { EditTransactionModal } from "@/components/modals/edit-transaction-modal
 import { ExportModal } from "@/components/modals/export-modal"
 import { Search, Download, PlusCircle, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { useTransactionsQuery } from "@/hooks/use-transactions-query"
+import { useTransactions } from "@/hooks/use-transactions-query"
 import { useUserPlan } from "@/contexts/user-plan-context"
 
 export default function TransactionsPage() {
@@ -22,7 +22,7 @@ export default function TransactionsPage() {
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null)
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
   
-  const { transactions, categories, loading, deleteTransaction, refetchTransactions } = useTransactionsQuery()
+  const { transactions, categories, loading, deleteTransaction, refetchTransactions } = useTransactions()
   const { currentPlan } = useUserPlan()
   const isProfessional = ['pro', 'premium'].includes(currentPlan)
   
