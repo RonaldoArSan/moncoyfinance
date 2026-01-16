@@ -9,6 +9,7 @@ export interface User {
   updated_at: string
   stripe_customer_id?: string | null
   photo_url?: string | null // URL da foto do usuário
+  email_confirmed_at?: string | null // Data de confirmação do email
 }
 
 export interface Category {

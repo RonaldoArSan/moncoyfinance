@@ -3,7 +3,7 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Create a profile in public.users
-  INSERT INTO public.users (id, name, email, plan)
+  INSERT INTO public.users (id, name, email, plan, email_confirmed_at)
   VALUES (
     NEW.id,
     COALESCE(
@@ -12,7 +12,8 @@ BEGIN
       split_part(NEW.email, '@', 1)
     ),
     NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'plan', 'basic')
+    COALESCE(NEW.raw_user_meta_data->>'plan', 'basic'),
+    NEW.confirmed_at
   );
   
   -- Create default settings in public.user_settings
