@@ -26,7 +26,8 @@ export default function ClientLayout({
   const isPublicPage = 
     pathname === "/landingpage" ||
     pathname === "/privacy" ||
-    pathname === "/terms"
+    pathname === "/terms" ||
+    pathname === "/calendar-demo"
 
   const isAuthPage =
     pathname === "/login" ||
