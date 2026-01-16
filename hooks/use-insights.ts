@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTransactions } from './use-transactions'
 import { useFinancialSummary } from './use-financial-summary'
 
@@ -15,11 +15,12 @@ export function useInsights() {
   const { transactions } = useTransactions()
   const summary = useFinancialSummary()
 
-  useEffect(() => {
-    generateInsights()
-  }, [transactions, summary])
+  const generateInsights = useCallback(() => {
+    // Don't generate insights if summary is still loading
+    if (summary.loading) {
+      return
+    }
 
-  const generateInsights = () => {
     try {
       setLoading(true)
       const generatedInsights: Insight[] = []
@@ -127,7 +128,11 @@ export function useInsights() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [transactions, summary.totalBalance, summary.loading])
+
+  useEffect(() => {
+    generateInsights()
+  }, [generateInsights])
 
   return {
     insights,

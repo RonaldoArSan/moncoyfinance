@@ -39,8 +39,13 @@ export default function SupportPage() {
     const fetchData = async () => {
       try {
         const settingsRes = await fetch("/api/support/settings", { cache: "no-store" })
-        const settingsJson = await settingsRes.json()
-        setSettings(settingsJson)
+        if (settingsRes.ok) {
+          const settingsJson = await settingsRes.json()
+          setSettings(settingsJson)
+        } else {
+          console.error("Failed to fetch support settings:", settingsRes.status)
+          setSettings(null)
+        }
 
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
