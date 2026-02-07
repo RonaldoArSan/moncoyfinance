@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar, TrendingUp, Settings, Loader2 } from "lucide-react"
 import { ManageCategoriesModal } from "./manage-categories-modal"
-import { useInvestmentsQuery } from "@/hooks/use-investments-query"
+import { useInvestments } from "@/hooks/use-investments-query"
 
 interface NewInvestmentModalProps {
   open: boolean
@@ -34,7 +34,7 @@ export function NewInvestmentModal({ open, onOpenChange }: NewInvestmentModalPro
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
 
   const { categories, createInvestment } = useInvestments()
-  
+
   const assetTypes = [
     { value: 'stocks', label: 'Ações' },
     { value: 'fii', label: 'FII' },
@@ -62,7 +62,7 @@ export function NewInvestmentModal({ open, onOpenChange }: NewInvestmentModalPro
         broker: broker || undefined,
         category_id: categoryId || undefined
       })
-      
+
       // Reset form
       setAssetName('')
       setAssetType('')
@@ -70,7 +70,7 @@ export function NewInvestmentModal({ open, onOpenChange }: NewInvestmentModalPro
       setPrice('')
       setBroker('')
       setCategoryId('')
-      
+
       onOpenChange(false)
     } catch (error) {
       alert('Erro ao criar investimento')
@@ -107,9 +107,9 @@ export function NewInvestmentModal({ open, onOpenChange }: NewInvestmentModalPro
 
             <div className="grid gap-2">
               <Label htmlFor="asset-name">Nome do Ativo</Label>
-              <Input 
-                id="asset-name" 
-                placeholder="Ex: PETR4, HASH11, IVVB11..." 
+              <Input
+                id="asset-name"
+                placeholder="Ex: PETR4, HASH11, IVVB11..."
                 value={assetName}
                 onChange={(e) => setAssetName(e.target.value)}
               />
@@ -145,22 +145,22 @@ export function NewInvestmentModal({ open, onOpenChange }: NewInvestmentModalPro
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="quantity">Quantidade</Label>
-                <Input 
-                  id="quantity" 
-                  type="number" 
-                  placeholder="0" 
-                  step="1" 
+                <Input
+                  id="quantity"
+                  type="number"
+                  placeholder="0"
+                  step="1"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
                 />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="price">Preço Unitário</Label>
-                <Input 
-                  id="price" 
-                  type="number" 
-                  placeholder="0,00" 
-                  step="0.01" 
+                <Input
+                  id="price"
+                  type="number"
+                  placeholder="0,00"
+                  step="0.01"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                 />
@@ -169,11 +169,11 @@ export function NewInvestmentModal({ open, onOpenChange }: NewInvestmentModalPro
 
             <div className="grid gap-2">
               <Label htmlFor="total-value">Valor Total</Label>
-              <Input 
-                id="total-value" 
-                type="number" 
-                placeholder="0,00" 
-                step="0.01" 
+              <Input
+                id="total-value"
+                type="number"
+                placeholder="0,00"
+                step="0.01"
                 value={quantity && price ? (parseFloat(quantity) * parseFloat(price)).toFixed(2) : ''}
                 readOnly
                 className="bg-muted"
@@ -182,9 +182,9 @@ export function NewInvestmentModal({ open, onOpenChange }: NewInvestmentModalPro
 
             <div className="grid gap-2">
               <Label htmlFor="broker">Corretora</Label>
-              <Input 
-                id="broker" 
-                placeholder="Ex: XP, Rico, Clear..." 
+              <Input
+                id="broker"
+                placeholder="Ex: XP, Rico, Clear..."
                 value={broker}
                 onChange={(e) => setBroker(e.target.value)}
               />

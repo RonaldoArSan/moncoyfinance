@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge"
 import { Calendar, Upload, Camera, FileText, Loader2, Crown, X, Settings } from "lucide-react"
 import { ManageCategoriesModal } from "./manage-categories-modal"
 import { useUserPlan, useFeatureAccess } from "@/contexts/user-plan-context"
-import { useTransactionsQuery } from "@/hooks/use-transactions-query"
+import { useTransactions } from "@/hooks/use-transactions-query"
 import { Checkbox } from "@/components/ui/checkbox"
 
 interface NewTransactionModalProps {
@@ -50,7 +50,7 @@ export function NewTransactionModal({ open, onOpenChange }: NewTransactionModalP
   const { currentPlan } = useUserPlan()
   const hasReceiptAnalysis = false // Feature not available yet
   const { categories, createTransaction, refreshCategories, createRecurringTransaction } = useTransactions()
-  
+
   const filteredCategories = categories.filter(c => c.type === type)
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -112,7 +112,7 @@ export function NewTransactionModal({ open, onOpenChange }: NewTransactionModalP
           is_active: true,
           notes: notes || undefined
         })
-        
+
         // Criar também a primeira transação
         const newTransaction = await createTransaction({
           description,
@@ -140,7 +140,7 @@ export function NewTransactionModal({ open, onOpenChange }: NewTransactionModalP
           notes: notes || undefined
         })
       }
-      
+
       // Reset form
       setDescription('')
       setAmount('')
@@ -154,7 +154,7 @@ export function NewTransactionModal({ open, onOpenChange }: NewTransactionModalP
       setEndDate('')
       setUploadedFile(null)
       setExtractedData(null)
-      
+
       onOpenChange(false)
     } catch (error) {
       alert('Erro ao criar transação')
@@ -314,9 +314,9 @@ export function NewTransactionModal({ open, onOpenChange }: NewTransactionModalP
 
           <div className="grid gap-2">
             <Label htmlFor="description">Descrição</Label>
-            <Input 
-              id="description" 
-              placeholder="Ex: Supermercado, Salário..." 
+            <Input
+              id="description"
+              placeholder="Ex: Supermercado, Salário..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
@@ -324,10 +324,10 @@ export function NewTransactionModal({ open, onOpenChange }: NewTransactionModalP
 
           <div className="grid gap-2">
             <Label htmlFor="amount">Valor</Label>
-            <Input 
-              id="amount" 
-              type="number" 
-              placeholder="0,00" 
+            <Input
+              id="amount"
+              type="number"
+              placeholder="0,00"
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -364,9 +364,9 @@ export function NewTransactionModal({ open, onOpenChange }: NewTransactionModalP
           <div className="grid gap-2">
             <Label htmlFor="date">Data</Label>
             <div className="relative">
-              <Input 
-                id="date" 
-                type="date" 
+              <Input
+                id="date"
+                type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
               />
@@ -407,8 +407,8 @@ export function NewTransactionModal({ open, onOpenChange }: NewTransactionModalP
 
           <div className="grid gap-2">
             <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="recurring" 
+              <Checkbox
+                id="recurring"
                 checked={isRecurring}
                 onCheckedChange={(checked) => setIsRecurring(checked as boolean)}
               />
@@ -419,7 +419,7 @@ export function NewTransactionModal({ open, onOpenChange }: NewTransactionModalP
           {isRecurring && (
             <div className="space-y-4 p-4 border rounded-lg bg-muted/20">
               <h4 className="font-medium">Configurações de Recorrência</h4>
-              
+
               <div className="grid gap-2">
                 <Label>Frequência</Label>
                 <Select value={frequency} onValueChange={(value: "monthly" | "weekly" | "yearly") => setFrequency(value)}>
@@ -472,9 +472,9 @@ export function NewTransactionModal({ open, onOpenChange }: NewTransactionModalP
 
               <div className="grid gap-2">
                 <Label htmlFor="end-date">Data de término (opcional)</Label>
-                <Input 
-                  id="end-date" 
-                  type="date" 
+                <Input
+                  id="end-date"
+                  type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                 />
@@ -484,9 +484,9 @@ export function NewTransactionModal({ open, onOpenChange }: NewTransactionModalP
 
           <div className="grid gap-2">
             <Label htmlFor="notes">Observações (opcional)</Label>
-            <Textarea 
-              id="notes" 
-              placeholder="Adicione detalhes sobre esta transação..." 
+            <Textarea
+              id="notes"
+              placeholder="Adicione detalhes sobre esta transação..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
@@ -512,16 +512,16 @@ export function NewTransactionModal({ open, onOpenChange }: NewTransactionModalP
           </Button>
         </DialogFooter>
       </DialogContent>
-      <ManageCategoriesModal 
-        open={isCategoryModalOpen} 
+      <ManageCategoriesModal
+        open={isCategoryModalOpen}
         onOpenChange={(open) => {
           setIsCategoryModalOpen(open)
           if (!open) {
             // Recarregar categorias quando o modal for fechado
             refreshCategories()
           }
-        }} 
-        type={type} 
+        }}
+        type={type}
       />
     </Dialog>
   )

@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar, Target, Settings, Loader2 } from "lucide-react"
 import { ManageCategoriesModal } from "./manage-categories-modal"
-import { useGoalsQuery } from "@/hooks/use-goals-query"
+import { useGoals } from "@/hooks/use-goals-query"
 
 interface NewGoalModalProps {
   open: boolean
@@ -68,7 +68,7 @@ export function NewGoalModal({ open, onOpenChange }: NewGoalModalProps) {
         status: 'active',
         priority
       })
-      
+
       // Reset form
       setTitle('')
       setDescription('')
@@ -77,7 +77,7 @@ export function NewGoalModal({ open, onOpenChange }: NewGoalModalProps) {
       setDeadline('')
       setCategoryId('')
       setPriority('medium')
-      
+
       onOpenChange(false)
     } catch (error) {
       alert('Erro ao criar meta')
@@ -112,9 +112,9 @@ export function NewGoalModal({ open, onOpenChange }: NewGoalModalProps) {
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="title">Título da Meta</Label>
-            <Input 
-              id="title" 
-              placeholder="Ex: Reserva de emergência, Viagem..." 
+            <Input
+              id="title"
+              placeholder="Ex: Reserva de emergência, Viagem..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
@@ -122,9 +122,9 @@ export function NewGoalModal({ open, onOpenChange }: NewGoalModalProps) {
 
           <div className="grid gap-2">
             <Label htmlFor="description">Descrição</Label>
-            <Textarea 
-              id="description" 
-              placeholder="Descreva sua meta em detalhes..." 
+            <Textarea
+              id="description"
+              placeholder="Descreva sua meta em detalhes..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
@@ -133,22 +133,22 @@ export function NewGoalModal({ open, onOpenChange }: NewGoalModalProps) {
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="target-amount">Valor Alvo</Label>
-              <Input 
-                id="target-amount" 
-                type="number" 
-                placeholder="0,00" 
-                step="0.01" 
+              <Input
+                id="target-amount"
+                type="number"
+                placeholder="0,00"
+                step="0.01"
                 value={targetAmount}
                 onChange={(e) => setTargetAmount(e.target.value)}
               />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="current-amount">Valor Atual</Label>
-              <Input 
-                id="current-amount" 
-                type="number" 
-                placeholder="0,00" 
-                step="0.01" 
+              <Input
+                id="current-amount"
+                type="number"
+                placeholder="0,00"
+                step="0.01"
                 value={currentAmount}
                 onChange={(e) => setCurrentAmount(e.target.value)}
               />
@@ -158,9 +158,9 @@ export function NewGoalModal({ open, onOpenChange }: NewGoalModalProps) {
           <div className="grid gap-2">
             <Label htmlFor="deadline">Data Limite</Label>
             <div className="relative">
-              <Input 
-                id="deadline" 
-                type="date" 
+              <Input
+                id="deadline"
+                type="date"
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
               />
@@ -229,8 +229,8 @@ export function NewGoalModal({ open, onOpenChange }: NewGoalModalProps) {
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button 
-            className={getPriorityColor(priority)} 
+          <Button
+            className={getPriorityColor(priority)}
             onClick={handleSubmit}
             disabled={isSubmitting}
           >
@@ -245,16 +245,16 @@ export function NewGoalModal({ open, onOpenChange }: NewGoalModalProps) {
           </Button>
         </DialogFooter>
       </DialogContent>
-      <ManageCategoriesModal 
-        open={isCategoryModalOpen} 
+      <ManageCategoriesModal
+        open={isCategoryModalOpen}
         onOpenChange={(open) => {
           setIsCategoryModalOpen(open)
           if (!open) {
             // Recarregar categorias quando o modal for fechado
             refreshCategories()
           }
-        }} 
-        type="goal" 
+        }}
+        type="goal"
       />
     </Dialog>
   )

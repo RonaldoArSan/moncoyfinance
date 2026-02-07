@@ -8,20 +8,20 @@ import { NewInvestmentModal } from "@/components/modals/new-investment-modal"
 import { ExportModal } from "@/components/modals/export-modal"
 import { TrendingUp, PlusCircle, DollarSign, BarChart3, Calculator, FileText, Eye, MoreHorizontal, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { useInvestmentsQuery } from "@/hooks/use-investments-query"
+import { useInvestments } from "@/hooks/use-investments-query"
 import { useUserPlan } from "@/contexts/user-plan-context"
 
 export default function InvestmentsPage() {
   const [isInvestmentModalOpen, setIsInvestmentModalOpen] = useState(false)
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
-  
-  const { investments, loading, calculatePortfolioSummary, getAssetTypeDistribution, deleteInvestment } = useInvestmentsQuery()
+
+  const { investments, loading, calculatePortfolioSummary, getAssetTypeDistribution, deleteInvestment } = useInvestments()
   const { currentPlan } = useUserPlan()
   const isProfessional = ['pro', 'premium'].includes(currentPlan)
-  
+
   const portfolio = calculatePortfolioSummary()
   const assetDistribution = getAssetTypeDistribution()
-  
+
   const getAssetTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
       'stocks': 'Ações',
@@ -34,7 +34,7 @@ export default function InvestmentsPage() {
     }
     return labels[type] || type
   }
-  
+
   const getAssetTypeColor = (type: string) => {
     const colors: Record<string, string> = {
       'stocks': 'bg-purple-500',
@@ -168,9 +168,9 @@ export default function InvestmentsPage() {
                 <CardTitle>Posições</CardTitle>
                 <CardDescription>Detalhes dos seus investimentos</CardDescription>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => isProfessional ? setIsExportModalOpen(true) : alert('Funcionalidade disponível nos Planos Pro e Premium')}
               >
                 <FileText className="w-4 h-4 mr-2" />
@@ -208,7 +208,7 @@ export default function InvestmentsPage() {
                     const totalInvested = investment.quantity * investment.avg_price
                     const gain = totalValue - totalInvested
                     const gainPercentage = totalInvested > 0 ? (gain / totalInvested) * 100 : 0
-                    
+
                     return (
                       <div key={investment.id} className="border rounded-lg p-4 space-y-3">
                         <div className="flex justify-between items-start">
@@ -223,9 +223,8 @@ export default function InvestmentsPage() {
                               <div className="font-medium">
                                 R$ {totalValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                               </div>
-                              <div className={`text-sm ${
-                                gainPercentage >= 0 ? "text-green-600" : "text-red-600"
-                              }`}>
+                              <div className={`text-sm ${gainPercentage >= 0 ? "text-green-600" : "text-red-600"
+                                }`}>
                                 {gainPercentage >= 0 ? "+" : ""}{gainPercentage.toFixed(2)}%
                               </div>
                             </div>
@@ -258,73 +257,71 @@ export default function InvestmentsPage() {
                   })}
                 </div>
                 <div className="overflow-x-auto hidden sm:block">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2">Ativo</th>
-                      <th className="text-right py-2">Qtd</th>
-                      <th className="text-right py-2">Preço Médio</th>
-                      <th className="text-right py-2">Preço Atual</th>
-                      <th className="text-right py-2">Valor Total</th>
-                      <th className="text-right py-2">Ganho/Perda</th>
-                      <th className="text-right py-2">%</th>
-                      <th className="text-right py-2">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {investments.map((investment) => {
-                      const currentPrice = investment.current_price || investment.avg_price
-                      const totalValue = investment.quantity * currentPrice
-                      const totalInvested = investment.quantity * investment.avg_price
-                      const gain = totalValue - totalInvested
-                      const gainPercentage = totalInvested > 0 ? (gain / totalInvested) * 100 : 0
-                      
-                      return (
-                        <tr key={investment.id} className="border-b hover:bg-muted/50">
-                          <td className="py-3">
-                            <div>
-                              <div className="font-medium">{investment.asset_name}</div>
-                              <Badge variant="secondary" className="text-xs">
-                                {getAssetTypeLabel(investment.asset_type)}
-                              </Badge>
-                            </div>
-                          </td>
-                          <td className="text-right py-3">{investment.quantity}</td>
-                          <td className="text-right py-3">R$ {investment.avg_price.toFixed(2)}</td>
-                          <td className="text-right py-3">R$ {currentPrice.toFixed(2)}</td>
-                          <td className="text-right py-3 font-medium">
-                            R$ {totalValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                          </td>
-                          <td
-                            className={`text-right py-3 font-medium ${
-                              gain >= 0 ? "text-green-600" : "text-red-600"
-                            }`}
-                          >
-                            {gain >= 0 ? "+" : ""}R$ {gain.toFixed(2)}
-                          </td>
-                          <td
-                            className={`text-right py-3 font-medium ${
-                              gainPercentage >= 0 ? "text-green-600" : "text-red-600"
-                            }`}
-                          >
-                            {gainPercentage >= 0 ? "+" : ""}
-                            {gainPercentage.toFixed(2)}%
-                          </td>
-                          <td className="text-right py-3">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => deleteInvestment(investment.id)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2">Ativo</th>
+                        <th className="text-right py-2">Qtd</th>
+                        <th className="text-right py-2">Preço Médio</th>
+                        <th className="text-right py-2">Preço Atual</th>
+                        <th className="text-right py-2">Valor Total</th>
+                        <th className="text-right py-2">Ganho/Perda</th>
+                        <th className="text-right py-2">%</th>
+                        <th className="text-right py-2">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {investments.map((investment) => {
+                        const currentPrice = investment.current_price || investment.avg_price
+                        const totalValue = investment.quantity * currentPrice
+                        const totalInvested = investment.quantity * investment.avg_price
+                        const gain = totalValue - totalInvested
+                        const gainPercentage = totalInvested > 0 ? (gain / totalInvested) * 100 : 0
+
+                        return (
+                          <tr key={investment.id} className="border-b hover:bg-muted/50">
+                            <td className="py-3">
+                              <div>
+                                <div className="font-medium">{investment.asset_name}</div>
+                                <Badge variant="secondary" className="text-xs">
+                                  {getAssetTypeLabel(investment.asset_type)}
+                                </Badge>
+                              </div>
+                            </td>
+                            <td className="text-right py-3">{investment.quantity}</td>
+                            <td className="text-right py-3">R$ {investment.avg_price.toFixed(2)}</td>
+                            <td className="text-right py-3">R$ {currentPrice.toFixed(2)}</td>
+                            <td className="text-right py-3 font-medium">
+                              R$ {totalValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                            </td>
+                            <td
+                              className={`text-right py-3 font-medium ${gain >= 0 ? "text-green-600" : "text-red-600"
+                                }`}
                             >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                              {gain >= 0 ? "+" : ""}R$ {gain.toFixed(2)}
+                            </td>
+                            <td
+                              className={`text-right py-3 font-medium ${gainPercentage >= 0 ? "text-green-600" : "text-red-600"
+                                }`}
+                            >
+                              {gainPercentage >= 0 ? "+" : ""}
+                              {gainPercentage.toFixed(2)}%
+                            </td>
+                            <td className="text-right py-3">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteInvestment(investment.id)}
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </>
             )}
@@ -333,8 +330,8 @@ export default function InvestmentsPage() {
       </div>
 
       {/* Modals */}
-      <NewInvestmentModal 
-        open={isInvestmentModalOpen} 
+      <NewInvestmentModal
+        open={isInvestmentModalOpen}
         onOpenChange={setIsInvestmentModalOpen}
       />
       <ExportModal

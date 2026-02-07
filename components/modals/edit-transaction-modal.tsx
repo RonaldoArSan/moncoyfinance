@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar, Loader2 } from "lucide-react"
-import { useTransactionsQuery } from "@/hooks/use-transactions-query"
+import { useTransactions } from "@/hooks/use-transactions-query"
 import type { Transaction } from "@/lib/supabase/types"
 
 interface EditTransactionModalProps {
@@ -35,7 +35,7 @@ export function EditTransactionModal({ open, onOpenChange, transaction }: EditTr
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const { categories, updateTransaction } = useTransactions()
-  
+
   const filteredCategories = categories.filter(c => c.type === transaction?.type)
 
   useEffect(() => {
@@ -85,8 +85,8 @@ export function EditTransactionModal({ open, onOpenChange, transaction }: EditTr
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="description">Descrição</Label>
-            <Input 
-              id="description" 
+            <Input
+              id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
@@ -94,9 +94,9 @@ export function EditTransactionModal({ open, onOpenChange, transaction }: EditTr
 
           <div className="grid gap-2">
             <Label htmlFor="amount">Valor</Label>
-            <Input 
-              id="amount" 
-              type="number" 
+            <Input
+              id="amount"
+              type="number"
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -122,9 +122,9 @@ export function EditTransactionModal({ open, onOpenChange, transaction }: EditTr
           <div className="grid gap-2">
             <Label htmlFor="date">Data</Label>
             <div className="relative">
-              <Input 
-                id="date" 
-                type="date" 
+              <Input
+                id="date"
+                type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
               />
@@ -165,8 +165,8 @@ export function EditTransactionModal({ open, onOpenChange, transaction }: EditTr
 
           <div className="grid gap-2">
             <Label htmlFor="notes">Observações</Label>
-            <Textarea 
-              id="notes" 
+            <Textarea
+              id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />

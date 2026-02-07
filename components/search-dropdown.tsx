@@ -1,9 +1,9 @@
 "use client"
 
 import type React from "react"
-import { useTransactionsQuery } from "@/hooks/use-transactions-query"
-import { useGoalsQuery } from "@/hooks/use-goals-query"
-import { useInvestmentsQuery } from "@/hooks/use-investments-query"
+import { useTransactions } from "@/hooks/use-transactions-query"
+import { useGoals } from "@/hooks/use-goals-query"
+import { useInvestments } from "@/hooks/use-investments-query"
 
 import { Search, Clock, TrendingUp, Target, CreditCard, DollarSign } from "lucide-react"
 import { Input } from "@/components/ui/input"

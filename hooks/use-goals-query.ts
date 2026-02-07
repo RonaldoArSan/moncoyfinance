@@ -18,7 +18,7 @@ export const goalKeys = {
 /**
  * Hook otimizado com React Query para metas
  */
-export function useGoalsQuery() {
+export function useGoals() {
   const { userProfile } = useAuth()
   const queryClient = useQueryClient()
   const userId = userProfile?.id
@@ -114,6 +114,7 @@ export function useGoalsQuery() {
     
     // Controle manual
     refetchGoals,
+    refreshCategories: () => queryClient.invalidateQueries({ queryKey: goalKeys.categories() }),
     
     // Estados de mutation
     isCreating: createGoalMutation.isPending,

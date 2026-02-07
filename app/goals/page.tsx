@@ -8,14 +8,14 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { NewGoalModal } from "@/components/modals/new-goal-modal"
 import { Target, PlusCircle, Calendar, DollarSign, TrendingUp, Trash2, Plus } from "lucide-react"
 import { useState } from "react"
-import { useGoalsQuery } from "@/hooks/use-goals-query"
+import { useGoals } from "@/hooks/use-goals-query"
 
 export default function GoalsPage() {
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false)
   const [addValueGoalId, setAddValueGoalId] = useState<string | null>(null)
   const [addValueAmount, setAddValueAmount] = useState('')
-  
-  const { goals, loading, updateGoal, deleteGoal } = useGoalsQuery()
+
+  const { goals, loading, updateGoal, deleteGoal } = useGoals()
 
   const getPriorityColor = (priority?: string) => {
     switch (priority) {
@@ -248,13 +248,12 @@ export default function GoalsPage() {
                       <div>
                         <p className="text-muted-foreground font-medium">Prazo</p>
                         {daysUntilDeadline !== null ? (
-                          <p className={`font-bold flex items-center ${
-                            daysUntilDeadline > 30 
-                              ? "text-green-600 dark:text-green-400" 
-                              : daysUntilDeadline > 0 
-                              ? "text-amber-600 dark:text-amber-400" 
+                          <p className={`font-bold flex items-center ${daysUntilDeadline > 30
+                            ? "text-green-600 dark:text-green-400"
+                            : daysUntilDeadline > 0
+                              ? "text-amber-600 dark:text-amber-400"
                               : "text-red-600 dark:text-red-400"
-                          }`}>
+                            }`}>
                             <Calendar className="w-3 h-3 mr-1" />
                             {daysUntilDeadline > 0 ? `${daysUntilDeadline} dias` : "Vencido"}
                           </p>
@@ -296,8 +295,8 @@ export default function GoalsPage() {
         )}
       </div>
 
-      <NewGoalModal 
-        open={isGoalModalOpen} 
+      <NewGoalModal
+        open={isGoalModalOpen}
         onOpenChange={setIsGoalModalOpen}
       />
     </div>

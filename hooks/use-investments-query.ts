@@ -18,7 +18,7 @@ export const investmentKeys = {
 /**
  * Hook otimizado com React Query para investimentos
  */
-export function useInvestmentsQuery() {
+export function useInvestments() {
   const { userProfile } = useAuth()
   const queryClient = useQueryClient()
   const userId = userProfile?.id

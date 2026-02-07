@@ -188,6 +188,7 @@ export function useTransactions() {
     
     // Controle manual
     refetchTransactions,
+    refreshCategories: () => queryClient.invalidateQueries({ queryKey: transactionKeys.categories() }),
     
     // Estados de mutation
     isCreating: createTransactionMutation.isPending,
