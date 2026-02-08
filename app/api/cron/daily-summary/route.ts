@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-// Usar service role key para operações administrativas
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Inicialização lazy do cliente Supabase Admin
+let supabaseAdmin: SupabaseClient | null = null
+
+function getSupabaseAdmin(): SupabaseClient {
+    if (!supabaseAdmin) {
+        if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+            throw new Error('Missing Supabase environment variables for admin client')
+        }
+        supabaseAdmin = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL,
+            process.env.SUPABASE_SERVICE_ROLE_KEY
+        )
+    }
+    return supabaseAdmin
+}
 
 /**
  * Cron Job: Resumo Diário e Transações Recorrentes
@@ -36,11 +46,12 @@ export async function GET(request: NextRequest) {
     console.log('🕐 [CRON] Starting daily summary job:', new Date().toISOString())
 
     try {
+        const supabase = getSupabaseAdmin()
         const today = new Date()
         const todayStr = today.toISOString().split('T')[0]
 
         // 1. Buscar transações recorrentes que devem ser criadas hoje
-        const { data: commitments, error: commitmentsError } = await supabaseAdmin
+        const { data: commitments, error: commitmentsError } = await supabase
             .from('commitments')
             .select('*')
             .eq('active', true)
@@ -57,7 +68,7 @@ export async function GET(request: NextRequest) {
 
             for (const commitment of commitments) {
                 // Criar transação a partir do compromisso
-                const { error: insertError } = await supabaseAdmin
+                const { error: insertError } = await supabase
                     .from('transactions')
                     .insert({
                         user_id: commitment.user_id,
@@ -75,7 +86,7 @@ export async function GET(request: NextRequest) {
                     // Calcular próxima ocorrência
                     const nextDate = calculateNextOccurrence(new Date(commitment.next_occurrence), commitment.frequency)
 
-                    await supabaseAdmin
+                    await supabase
                         .from('commitments')
                         .update({
                             next_occurrence: nextDate.toISOString().split('T')[0],
@@ -93,7 +104,7 @@ export async function GET(request: NextRequest) {
         yesterday.setDate(yesterday.getDate() - 1)
         const yesterdayStr = yesterday.toISOString().split('T')[0]
 
-        const { data: dailyStats, error: statsError } = await supabaseAdmin
+        const { data: dailyStats, error: statsError } = await supabase
             .from('transactions')
             .select('user_id, amount, type')
             .gte('date', yesterdayStr)

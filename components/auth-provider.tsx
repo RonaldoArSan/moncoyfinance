@@ -67,10 +67,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true
     let isProcessing = false
 
+    // Safety timeout para garantir que loading seja false após 5 segundos
+    const safetyTimeout = setTimeout(() => {
+      if (mounted && loading) {
+        logger.dev('⚠️ Safety timeout reached, forcing loading to false')
+        setLoading(false)
+      }
+    }, 5000)
+
     const initializeAuth = async () => {
       try {
         logger.dev('🔄 Initializing auth...')
-        const { data: { session } } = await supabase.auth.getSession()
+        const { data: { session }, error } = await supabase.auth.getSession()
+
+        if (error) {
+          logger.error('❌ Error getting session:', error)
+          if (mounted) {
+            setLoading(false)
+          }
+          return
+        }
 
         if (mounted && !isProcessing) {
           if (session?.user) {
@@ -178,6 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       logger.dev('🧹 Cleaning up auth subscription')
       mounted = false
+      clearTimeout(safetyTimeout)
       subscription.unsubscribe()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

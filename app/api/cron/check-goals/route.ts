@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-// Usar service role key para operações administrativas
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Inicialização lazy do cliente Supabase Admin
+let supabaseAdmin: SupabaseClient | null = null
+
+function getSupabaseAdmin(): SupabaseClient {
+    if (!supabaseAdmin) {
+        if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+            throw new Error('Missing Supabase environment variables for admin client')
+        }
+        supabaseAdmin = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL,
+            process.env.SUPABASE_SERVICE_ROLE_KEY
+        )
+    }
+    return supabaseAdmin
+}
 
 /**
  * Cron Job: Verificação de Metas Financeiras
@@ -36,6 +46,7 @@ export async function GET(request: NextRequest) {
     console.log('🎯 [CRON] Starting goals check job:', new Date().toISOString())
 
     try {
+        const supabase = getSupabaseAdmin()
         const today = new Date()
         const todayStr = today.toISOString().split('T')[0]
 
@@ -45,7 +56,7 @@ export async function GET(request: NextRequest) {
         const sevenDaysStr = sevenDaysFromNow.toISOString().split('T')[0]
 
         // 1. Buscar metas ativas
-        const { data: goals, error: goalsError } = await supabaseAdmin
+        const { data: goals, error: goalsError } = await supabase
             .from('goals')
             .select('*')
             .eq('status', 'active')
@@ -70,7 +81,7 @@ export async function GET(request: NextRequest) {
                     goalsCompleted++
 
                     // Atualizar status para completo
-                    await supabaseAdmin
+                    await supabase
                         .from('goals')
                         .update({
                             status: 'completed',
@@ -80,6 +91,7 @@ export async function GET(request: NextRequest) {
 
                     // Criar notificação de conclusão
                     await createNotification(
+                        supabase,
                         goal.user_id,
                         'goal_completed',
                         `🎉 Parabéns! Você atingiu sua meta "${goal.name}"!`,
@@ -96,7 +108,7 @@ export async function GET(request: NextRequest) {
                     )
 
                     // Verificar se já não enviou notificação hoje
-                    const { data: existingNotif } = await supabaseAdmin
+                    const { data: existingNotif } = await supabase
                         .from('notifications')
                         .select('id')
                         .eq('user_id', goal.user_id)
@@ -106,6 +118,7 @@ export async function GET(request: NextRequest) {
 
                     if (!existingNotif || existingNotif.length === 0) {
                         await createNotification(
+                            supabase,
                             goal.user_id,
                             'goal_deadline',
                             `⏰ Sua meta "${goal.name}" vence em ${daysRemaining} dias! Progresso: ${progress.toFixed(0)}%`,
@@ -114,18 +127,17 @@ export async function GET(request: NextRequest) {
                         notificationsCreated++
                     }
                 }
-                // Verificar metas com progresso estagnado (menos de 25% após metade do tempo)
+                // Verificar metas com progresso estagnado
                 else if (goal.created_at && goal.deadline) {
                     const totalDays = (new Date(goal.deadline).getTime() - new Date(goal.created_at).getTime()) / (1000 * 60 * 60 * 24)
                     const daysElapsed = (today.getTime() - new Date(goal.created_at).getTime()) / (1000 * 60 * 60 * 24)
                     const timeProgress = (daysElapsed / totalDays) * 100
 
                     if (timeProgress >= 50 && progress < 25) {
-                        // Verificar se já não enviou notificação esta semana
                         const weekAgo = new Date(today)
                         weekAgo.setDate(weekAgo.getDate() - 7)
 
-                        const { data: existingNotif } = await supabaseAdmin
+                        const { data: existingNotif } = await supabase
                             .from('notifications')
                             .select('id')
                             .eq('user_id', goal.user_id)
@@ -135,6 +147,7 @@ export async function GET(request: NextRequest) {
 
                         if (!existingNotif || existingNotif.length === 0) {
                             await createNotification(
+                                supabase,
                                 goal.user_id,
                                 'goal_stagnant',
                                 `💡 Sua meta "${goal.name}" precisa de atenção! Você está em ${progress.toFixed(0)}% mas já passou metade do tempo.`,
@@ -180,13 +193,14 @@ export async function GET(request: NextRequest) {
  * Cria uma notificação no banco de dados
  */
 async function createNotification(
+    supabase: SupabaseClient,
     userId: string,
     type: string,
     message: string,
     metadata?: Record<string, any>
 ) {
     try {
-        await supabaseAdmin
+        await supabase
             .from('notifications')
             .insert({
                 user_id: userId,

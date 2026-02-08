@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-// Usar service role key para operações administrativas
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Inicialização lazy do cliente Supabase Admin
+let supabaseAdmin: SupabaseClient | null = null
+
+function getSupabaseAdmin(): SupabaseClient {
+    if (!supabaseAdmin) {
+        if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+            throw new Error('Missing Supabase environment variables for admin client')
+        }
+        supabaseAdmin = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL,
+            process.env.SUPABASE_SERVICE_ROLE_KEY
+        )
+    }
+    return supabaseAdmin
+}
 
 /**
  * Cron Job: Limpeza e Manutenção
@@ -36,6 +46,7 @@ export async function GET(request: NextRequest) {
     console.log('🧹 [CRON] Starting cleanup job:', new Date().toISOString())
 
     try {
+        const supabase = getSupabaseAdmin()
         const today = new Date()
 
         // Calcular datas para limpeza
@@ -52,7 +63,7 @@ export async function GET(request: NextRequest) {
         let archivedItems = 0
 
         // 1. Remover notificações lidas com mais de 30 dias
-        const { data: notifData, error: notifError } = await supabaseAdmin
+        const { data: notifData, error: notifError } = await supabase
             .from('notifications')
             .delete()
             .eq('read', true)
@@ -65,7 +76,7 @@ export async function GET(request: NextRequest) {
         }
 
         // 2. Remover notificações não lidas com mais de 90 dias
-        const { data: oldNotifData, error: oldNotifError } = await supabaseAdmin
+        const { data: oldNotifData, error: oldNotifError } = await supabase
             .from('notifications')
             .delete()
             .lt('created_at', ninetyDaysAgoStr)
@@ -78,7 +89,7 @@ export async function GET(request: NextRequest) {
 
         // 3. Verificar e limpar tabela de logs de atividade (se existir)
         try {
-            const { data: logsData, error: logsError } = await supabaseAdmin
+            const { data: logsData, error: logsError } = await supabase
                 .from('activity_logs')
                 .delete()
                 .lt('created_at', ninetyDaysAgoStr)
@@ -95,7 +106,7 @@ export async function GET(request: NextRequest) {
 
         // 4. Atualizar estatísticas de cache (se houver)
         try {
-            const { error: cacheError } = await supabaseAdmin
+            const { error: cacheError } = await supabase
                 .from('cache_stats')
                 .delete()
                 .lt('created_at', thirtyDaysAgoStr)
@@ -108,7 +119,7 @@ export async function GET(request: NextRequest) {
         }
 
         // 5. Marcar compromissos expirados como inativos
-        const { data: expiredCommitments, error: expError } = await supabaseAdmin
+        const { data: expiredCommitments, error: expError } = await supabase
             .from('commitments')
             .update({ active: false })
             .eq('active', true)
