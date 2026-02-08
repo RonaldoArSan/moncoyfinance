@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { userApi } from '@/lib/api'
@@ -28,6 +28,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
 
+  // Refs para valores que mudam frequentemente mas não devem re-executar o useEffect de auth
+  const modeRef = useRef(mode)
+  const pathnameRef = useRef(pathname)
+
+  // Atualizar refs quando valores mudam
+  useEffect(() => {
+    modeRef.current = mode
+  }, [mode])
+
+  useEffect(() => {
+    pathnameRef.current = pathname
+  }, [pathname])
+
   // Determinar o modo da aplicação baseado na URL
   useEffect(() => {
     if (pathname?.startsWith('/admin')) {
@@ -49,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Verificar se é admin usando configuração centralizada
   const isAdmin = ADMIN_CONFIG.isAdmin(user?.email)
 
-  // Inicializar sessão
+  // Inicializar sessão - executa apenas uma vez
   useEffect(() => {
     let mounted = true
     let isProcessing = false
@@ -95,9 +108,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logger.dev('🔔 Auth state change:', event, session?.user?.email)
 
         if (event === 'SIGNED_OUT' || (!session?.user && event !== 'INITIAL_SESSION')) {
+          const currentPathname = pathnameRef.current
+          const currentMode = modeRef.current
+
           logger.dev('👋 User signed out')
-          logger.dev('📍 Current pathname:', pathname)
-          logger.dev('🔧 Current mode:', mode)
+          logger.dev('📍 Current pathname:', currentPathname)
+          logger.dev('🔧 Current mode:', currentMode)
           setUser(null)
           setUserProfile(null)
           setUserSettings(null)
@@ -114,15 +130,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             '/reset-password',
             '/auth/callback'
           ]
-          const isPublicRoute = publicRoutes.some(route => pathname?.startsWith(route))
-          logger.dev('🔍 isPublicRoute check:', { pathname, isPublicRoute, publicRoutes })
+          const isPublicRoute = publicRoutes.some(route => currentPathname?.startsWith(route))
+          logger.dev('🔍 isPublicRoute check:', { pathname: currentPathname, isPublicRoute, publicRoutes })
 
           if (!isPublicRoute) {
-            logger.dev('⚠️ Not a public route, redirecting based on mode:', mode)
-            if (mode === 'admin') {
+            logger.dev('⚠️ Not a public route, redirecting based on mode:', currentMode)
+            if (currentMode === 'admin') {
               logger.dev('↪️ Redirecting to admin login')
               router.push('/admin/login')
-            } else if (mode === 'user') {
+            } else if (currentMode === 'user') {
               logger.dev('↪️ Redirecting to user login')
               router.push('/login')
             }
@@ -150,7 +166,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [mode, router, pathname])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Executa apenas uma vez na montagem
 
   // Processar usuário autenticado
   const handleAuthUser = async (authUser: any) => {
@@ -177,16 +194,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logger.dev('✅ [AuthProvider] User state updated')
 
       // Verificar se está em página pública (não carregar perfil)
-      const isPublicPage = pathname?.startsWith('/landingpage') ||
-        pathname === '/privacy' ||
-        pathname === '/terms' ||
-        pathname === '/forgot-password' ||
-        pathname === '/reset-password' ||
-        pathname?.startsWith('/auth/callback')
+      const currentPathname = pathnameRef.current
+      const currentMode = modeRef.current
+
+      const isPublicPage = currentPathname?.startsWith('/landingpage') ||
+        currentPathname === '/privacy' ||
+        currentPathname === '/terms' ||
+        currentPathname === '/forgot-password' ||
+        currentPathname === '/reset-password' ||
+        currentPathname?.startsWith('/auth/callback')
 
       // Carregar perfil do usuário (exceto para modo público ou páginas públicas)
-      if (mode !== 'public' && !isPublicPage) {
-        logger.dev('📋 [AuthProvider] Loading user profile (mode:', mode, 'pathname:', pathname, ')')
+      if (currentMode !== 'public' && !isPublicPage) {
+        logger.dev('📋 [AuthProvider] Loading user profile (mode:', currentMode, 'pathname:', currentPathname, ')')
         try {
           const profile = await userApi.getCurrentUser()
           logger.dev('✅ [AuthProvider] Profile loaded:', { id: profile?.id, plan: profile?.plan })
