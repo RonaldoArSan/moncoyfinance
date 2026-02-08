@@ -107,6 +107,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         logger.dev('🔔 Auth state change:', event, session?.user?.email)
 
+        // Eventos que indicam sessão ativa
+        if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && session?.user) {
+          logger.dev('✨ User session detected:', event, session.user.email)
+          isProcessing = true
+          await handleAuthUser(session.user)
+          isProcessing = false
+          setLoading(false)
+          return
+        }
+
+        // Eventos que indicam logout ou sessão inválida
         if (event === 'SIGNED_OUT' || (!session?.user && event !== 'INITIAL_SESSION')) {
           const currentPathname = pathnameRef.current
           const currentMode = modeRef.current
@@ -145,16 +156,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } else {
             logger.dev('✅ Public route detected, no redirect needed')
           }
-        } else if (event === 'INITIAL_SESSION' && !session?.user) {
+
+          setLoading(false)
+          return
+        }
+
+        // INITIAL_SESSION sem usuário (primeira visita sem login)
+        if (event === 'INITIAL_SESSION' && !session?.user) {
           logger.dev('📋 Initial session: No user found')
           setUser(null)
           setUserProfile(null)
           setUserSettings(null)
-        } else if (event === 'SIGNED_IN' && session?.user) {
-          logger.dev('✨ User signed in:', session.user.email)
-          isProcessing = true
-          await handleAuthUser(session.user)
-          isProcessing = false
+          setLoading(false)
+          return
         }
 
         setLoading(false)
@@ -401,11 +415,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true)
 
-      const { error } = await supabase.auth.signOut()
+      // Limpar estado local primeiro
+      setUser(null)
+      setUserProfile(null)
+      setUserSettings(null)
+
+      // Usar scope 'global' para invalidar a sessão em todos os dispositivos
+      const { error } = await supabase.auth.signOut({ scope: 'global' })
       if (error) throw error
 
       return { success: true }
     } catch (error: any) {
+      console.error('Erro no signOut:', error)
       return { success: false, error: error.message }
     } finally {
       setLoading(false)

@@ -19,7 +19,6 @@ import { PlanBadge } from "@/components/plan-upgrade-card"
 import { useSettingsContext } from "@/contexts/settings-context"
 import { useUserPlan } from "@/contexts/user-plan-context"
 import { useAuth } from "@/components/auth-provider"
-import { supabase } from "@/lib/supabase/client"
 
 interface HeaderProps {
   onMenuClick?: () => void
@@ -29,19 +28,32 @@ export function Header({ onMenuClick }: HeaderProps) {
   const { user } = useSettingsContext()
   const { currentPlan } = useUserPlan()
   const { signOut } = useAuth()
-  
+
   const getPlanName = (plan: string) => {
     return plan === 'professional' ? 'Plano Profissional' : 'Plano Básico'
   }
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut()
+      // Usar o signOut do contexto que já está configurado corretamente
+      const result = await signOut()
+
+      if (!result.success) {
+        console.error('Erro no logout:', result.error)
+      }
+
+      // Limpar localStorage e redirecionar
+      localStorage.clear()
+      sessionStorage.clear()
+
+      // Forçar redirecionamento e limpeza de cache
+      window.location.replace("/login")
     } catch (error) {
       console.error('Erro no logout:', error)
-    } finally {
+      // Mesmo com erro, tentar redirecionar
       localStorage.clear()
-      window.location.href = "/login"
+      sessionStorage.clear()
+      window.location.replace("/login")
     }
   }
 

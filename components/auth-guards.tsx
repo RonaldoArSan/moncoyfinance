@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/components/auth-provider'
 import { Loader2 } from 'lucide-react'
@@ -11,17 +11,29 @@ interface AuthGuardProps {
   redirectTo?: string
 }
 
-export function AuthGuard({ 
-  children, 
+export function AuthGuard({
+  children,
   requiredMode = 'user',
-  redirectTo 
+  redirectTo
 }: AuthGuardProps) {
   const [isChecking, setIsChecking] = useState(true)
   const { user, userProfile, loading, isAdmin } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
+  const hasRedirected = useRef(false)
+  const checkTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
+    // Limpar timeout na desmontagem
+    return () => {
+      if (checkTimeoutRef.current) {
+        clearTimeout(checkTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    // Se ainda está carregando no AuthProvider, aguardar
     if (loading) return
 
     const checkAccess = () => {
@@ -34,13 +46,33 @@ export function AuthGuard({
       // Páginas de usuário - precisam estar logados
       if (requiredMode === 'user') {
         if (!user) {
-          router.push(redirectTo || '/login')
+          // Usuário não logado - redirecionar para login
+          if (!hasRedirected.current) {
+            hasRedirected.current = true
+            router.replace(redirectTo || '/login')
+          }
           return
         }
+
+        // Usuário existe - verificar perfil
         if (!userProfile) {
-          // Ainda carregando perfil
+          // Aguardar um tempo máximo para o perfil carregar
+          // Se não carregar em 5 segundos, permitir continuar mesmo assim
+          if (!checkTimeoutRef.current) {
+            checkTimeoutRef.current = setTimeout(() => {
+              console.warn('⚠️ UserProfile timeout - proceeding without profile')
+              setIsChecking(false)
+            }, 5000)
+          }
           return
         }
+
+        // Limpar timeout se o perfil foi carregado
+        if (checkTimeoutRef.current) {
+          clearTimeout(checkTimeoutRef.current)
+          checkTimeoutRef.current = null
+        }
+
         setIsChecking(false)
         return
       }
@@ -48,11 +80,17 @@ export function AuthGuard({
       // Páginas de admin - precisam ser admin
       if (requiredMode === 'admin') {
         if (!user) {
-          router.push('/admin/login')
+          if (!hasRedirected.current) {
+            hasRedirected.current = true
+            router.replace('/admin/login')
+          }
           return
         }
         if (!isAdmin) {
-          router.push('/admin/login?error=unauthorized')
+          if (!hasRedirected.current) {
+            hasRedirected.current = true
+            router.replace('/admin/login?error=unauthorized')
+          }
           return
         }
         setIsChecking(false)
@@ -64,6 +102,11 @@ export function AuthGuard({
 
     checkAccess()
   }, [user, userProfile, loading, isAdmin, requiredMode, router, redirectTo])
+
+  // Resetar flag de redirecionamento quando user muda
+  useEffect(() => {
+    hasRedirected.current = false
+  }, [user])
 
   // Loading state
   if (loading || isChecking) {

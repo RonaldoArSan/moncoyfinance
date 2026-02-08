@@ -25,42 +25,38 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(url, 308)
   }
 
-  // Criar cliente Supabase com middleware APENAS para rotas de auth
-  const isAuthRoute = req.nextUrl.pathname.startsWith('/auth/')
-  
-  if (isAuthRoute) {
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return req.cookies.get(name)?.value
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            res.cookies.set({
-              name,
-              value,
-              ...options,
-              sameSite: 'lax',
-              secure: isProd
-            })
-          },
-          remove(name: string, options: CookieOptions) {
-            res.cookies.set({
-              name,
-              value: '',
-              ...options,
-              maxAge: 0
-            })
-          },
+  // Criar cliente Supabase para refresh da sessão em todas as rotas
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return req.cookies.get(name)?.value
         },
-      }
-    )
+        set(name: string, value: string, options: CookieOptions) {
+          res.cookies.set({
+            name,
+            value,
+            ...options,
+            sameSite: 'lax',
+            secure: isProd
+          })
+        },
+        remove(name: string, options: CookieOptions) {
+          res.cookies.set({
+            name,
+            value: '',
+            ...options,
+            maxAge: 0
+          })
+        },
+      },
+    }
+  )
 
-    // Refresh session APENAS em rotas de auth
-    await supabase.auth.getSession()
-  }
+  // Refresh session em todas as rotas para manter cookies sincronizados
+  await supabase.auth.getSession()
 
   // Handle password reset redirection with tokens
   if (req.nextUrl.pathname === '/auth/callback') {
