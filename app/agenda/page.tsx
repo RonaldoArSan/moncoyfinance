@@ -1,15 +1,24 @@
-
 "use client"
 
-import { useMemo } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { useTransactions } from "@/hooks/use-transactions-query"
-import { Calendar, momentLocalizer } from "react-big-calendar"
+import { Calendar, dateFnsLocalizer, Views, View } from "react-big-calendar"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { parseISO } from "date-fns"
+import { parseISO, format, parse, startOfWeek, getDay } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
-const localizer = momentLocalizer(require('moment'))
+const locales = {
+  'pt-BR': ptBR,
+}
+
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek,
+  getDay,
+  locales,
+})
 
 export default function AgendaPage() {
   const { transactions, recurringTransactions, loading } = useTransactions()
@@ -421,22 +430,35 @@ export default function AgendaPage() {
                     </div>
                   ),
                   toolbar: (props: any) => (
-                    <div className="flex items-center justify-between px-2 py-1 rounded-t-lg border-b"
-                      style={{ background: 'var(--sidebar)', color: 'var(--sidebar-foreground)', borderColor: 'var(--sidebar-border)' }}>
+                    <div className="flex items-center justify-between px-2 py-1 rounded-t-lg border-b bg-sidebar text-sidebar-foreground border-sidebar-border">
                       <div className="flex gap-1">
-                        <button className="px-2 py-1 rounded" style={{ background: 'var(--secondary)', color: 'var(--secondary-foreground)' }} onClick={() => props.onNavigate('PREV')}>{(props.messages && props.messages.previous) ? props.messages.previous : 'Anterior'}</button>
-                        <button className="px-2 py-1 rounded" style={{ background: 'var(--secondary)', color: 'var(--secondary-foreground)' }} onClick={() => props.onNavigate('TODAY')}>{(props.messages && props.messages.today) ? props.messages.today : 'Hoje'}</button>
-                        <button className="px-2 py-1 rounded" style={{ background: 'var(--secondary)', color: 'var(--secondary-foreground)' }} onClick={() => props.onNavigate('NEXT')}>{(props.messages && props.messages.next) ? props.messages.next : 'Próximo'}</button>
+                        <button
+                          className="px-2 py-1 rounded transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:text-secondary-foreground"
+                          onClick={() => props.onNavigate('PREV')}
+                        >
+                          {(props.messages && props.messages.previous) ? props.messages.previous : 'Anterior'}
+                        </button>
+                        <button
+                          className="px-2 py-1 rounded transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:text-secondary-foreground"
+                          onClick={() => props.onNavigate('TODAY')}
+                        >
+                          {(props.messages && props.messages.today) ? props.messages.today : 'Hoje'}
+                        </button>
+                        <button
+                          className="px-2 py-1 rounded transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:text-secondary-foreground"
+                          onClick={() => props.onNavigate('NEXT')}
+                        >
+                          {(props.messages && props.messages.next) ? props.messages.next : 'Próximo'}
+                        </button>
                       </div>
-                      <span className="font-bold text-lg" style={{ color: 'var(--sidebar-primary)' }}>{props.label}</span>
+                      <span className="font-bold text-lg text-sidebar-primary">{props.label}</span>
                       <div className="flex gap-1">
                         {props.views && props.views.map((view: any) => (
                           <button key={view}
-                            className={`px-2 py-1 rounded`}
-                            style={{
-                              background: props.view === view ? 'var(--primary)' : 'var(--secondary)',
-                              color: props.view === view ? 'var(--primary-foreground)' : 'var(--secondary-foreground)'
-                            }}
+                            className={`px-2 py-1 rounded transition-colors ${props.view === view
+                                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                              }`}
                             onClick={() => props.onView(view)}>
                             {view === 'month' ? 'Mês' : view === 'week' ? 'Semana' : view === 'day' ? 'Dia' : view}
                           </button>
