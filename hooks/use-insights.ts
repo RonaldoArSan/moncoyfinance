@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useMemo } from 'react'
 import { useTransactions } from './use-transactions'
 import { useFinancialSummary } from './use-financial-summary'
 
@@ -10,18 +10,12 @@ interface Insight {
 }
 
 export function useInsights() {
-  const [insights, setInsights] = useState<Insight[]>([])
-  const [loading, setLoading] = useState(true)
-  const { transactions } = useTransactions()
+  const { transactions, loading: transactionsLoading } = useTransactions()
   const summary = useFinancialSummary()
 
-  useEffect(() => {
-    generateInsights()
-  }, [transactions, summary])
-
-  const generateInsights = () => {
+  // Usar useMemo para calcular insights de forma estável
+  const insights = useMemo(() => {
     try {
-      setLoading(true)
       const generatedInsights: Insight[] = []
 
       // Insight 1: Comparação com mês anterior
@@ -33,18 +27,18 @@ export function useInsights() {
       const currentMonthExpenses = transactions
         .filter(t => {
           const date = new Date(t.date)
-          return date.getMonth() === currentMonth && 
-                 date.getFullYear() === currentYear && 
-                 t.type === 'expense'
+          return date.getMonth() === currentMonth &&
+            date.getFullYear() === currentYear &&
+            t.type === 'expense'
         })
         .reduce((sum, t) => sum + Math.abs(t.amount), 0)
 
       const lastMonthExpenses = transactions
         .filter(t => {
           const date = new Date(t.date)
-          return date.getMonth() === lastMonth && 
-                 date.getFullYear() === lastMonthYear && 
-                 t.type === 'expense'
+          return date.getMonth() === lastMonth &&
+            date.getFullYear() === lastMonthYear &&
+            t.type === 'expense'
         })
         .reduce((sum, t) => sum + Math.abs(t.amount), 0)
 
@@ -78,21 +72,27 @@ export function useInsights() {
         })
       }
 
-      // Insight 3: Performance dos investimentos (simulado)
-      const hasInvestments = transactions.some(t => 
+      // Insight 3: Performance dos investimentos
+      const hasInvestments = transactions.some(t =>
         t.category?.name?.toLowerCase().includes('investimento') ||
         t.category?.name?.toLowerCase().includes('ações') ||
         t.category?.name?.toLowerCase().includes('fii')
       )
 
       if (hasInvestments) {
-        const performance = Math.floor(Math.random() * 20) + 5 // 5-25%
-        generatedInsights.push({
-          type: 'info',
-          title: 'Oportunidade',
-          message: `Seus investimentos estão performando ${performance}% acima da média.`,
-          icon: 'Zap'
-        })
+        // Usar um valor fixo baseado nos dados invés de random
+        const investmentAmount = transactions
+          .filter(t => t.category?.name?.toLowerCase().includes('investimento'))
+          .reduce((sum, t) => sum + Math.abs(t.amount), 0)
+
+        if (investmentAmount > 0) {
+          generatedInsights.push({
+            type: 'info',
+            title: 'Oportunidade',
+            message: `Continue investindo! Você já investiu R$ ${investmentAmount.toFixed(0)} este período.`,
+            icon: 'Zap'
+          })
+        }
       }
 
       // Se não há insights suficientes, adicionar insights padrão
@@ -120,17 +120,15 @@ export function useInsights() {
       }
 
       // Garantir que temos exatamente 3 insights
-      setInsights(generatedInsights.slice(0, 3))
+      return generatedInsights.slice(0, 3)
     } catch (error) {
       console.error('Erro ao gerar insights:', error)
-      setInsights([])
-    } finally {
-      setLoading(false)
+      return []
     }
-  }
+  }, [transactions, summary.totalBalance])
 
   return {
     insights,
-    loading
+    loading: transactionsLoading
   }
 }
