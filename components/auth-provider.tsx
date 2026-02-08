@@ -5,15 +5,15 @@ import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { userApi } from '@/lib/api'
 import { logger } from '@/lib/logger'
-import { ADMIN_CONFIG } from '@/lib/admin-config'
+import { ADMIN_CONFIG, ADMIN_EMAILS } from '@/lib/admin-config'
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
-import type { 
-  AuthContextType, 
-  AuthUser, 
-  User, 
-  UserSettings, 
-  RegisterData, 
-  AppMode 
+import type {
+  AuthContextType,
+  AuthUser,
+  User,
+  UserSettings,
+  RegisterData,
+  AppMode
 } from '@/types/auth'
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userSettings, setUserSettings] = useState<UserSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [mode, setMode] = useState<AppMode>('public')
-  
+
   const router = useRouter()
   const pathname = usePathname()
 
@@ -33,8 +33,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (pathname?.startsWith('/admin')) {
       setMode('admin')
     } else if (
-      pathname?.startsWith('/landingpage') || 
-      pathname === '/privacy' || 
+      pathname?.startsWith('/landingpage') ||
+      pathname === '/privacy' ||
       pathname === '/terms' ||
       pathname === '/forgot-password' ||
       pathname === '/reset-password' ||
@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         logger.dev('🔄 Initializing auth...')
         const { data: { session } } = await supabase.auth.getSession()
-        
+
         if (mounted && !isProcessing) {
           if (session?.user) {
             logger.dev('✅ Session found:', session.user.email)
@@ -101,14 +101,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null)
           setUserProfile(null)
           setUserSettings(null)
-          
+
           // Redirect based on mode APENAS se não estiver em página pública
           const publicRoutes = [
-            '/landingpage', 
-            '/privacy', 
-            '/terms', 
-            '/login', 
-            '/register', 
+            '/landingpage',
+            '/privacy',
+            '/terms',
+            '/login',
+            '/register',
             '/admin/login',
             '/forgot-password',
             '/reset-password',
@@ -116,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           ]
           const isPublicRoute = publicRoutes.some(route => pathname?.startsWith(route))
           logger.dev('🔍 isPublicRoute check:', { pathname, isPublicRoute, publicRoutes })
-          
+
           if (!isPublicRoute) {
             logger.dev('⚠️ Not a public route, redirecting based on mode:', mode)
             if (mode === 'admin') {
@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await handleAuthUser(session.user)
           isProcessing = false
         }
-        
+
         setLoading(false)
       }
     )
@@ -156,7 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const handleAuthUser = async (authUser: any) => {
     try {
       logger.dev('👤 [AuthProvider] Handling auth user:', { id: authUser.id, email: authUser.email })
-      
+
       // Evitar processamento duplo do mesmo usuário
       if (user?.id === authUser.id && userProfile) {
         logger.dev('⏭️ [AuthProvider] User already processed, skipping')
@@ -175,15 +175,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setUser(formattedUser)
       logger.dev('✅ [AuthProvider] User state updated')
-      
+
       // Verificar se está em página pública (não carregar perfil)
-      const isPublicPage = pathname?.startsWith('/landingpage') || 
-        pathname === '/privacy' || 
+      const isPublicPage = pathname?.startsWith('/landingpage') ||
+        pathname === '/privacy' ||
         pathname === '/terms' ||
         pathname === '/forgot-password' ||
         pathname === '/reset-password' ||
         pathname?.startsWith('/auth/callback')
-      
+
       // Carregar perfil do usuário (exceto para modo público ou páginas públicas)
       if (mode !== 'public' && !isPublicPage) {
         logger.dev('📋 [AuthProvider] Loading user profile (mode:', mode, 'pathname:', pathname, ')')
@@ -222,7 +222,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loadUserSettings = async (userId?: string) => {
     try {
       const id = userId || user?.id || userProfile?.id
-      
+
       if (!id) {
         logger.warn('No user ID available for loading settings')
         return
@@ -246,7 +246,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true)
-      
+
       // Validar campos antes de enviar
       if (!email || !email.trim()) {
         throw new Error('Email é obrigatório')
@@ -254,7 +254,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!password || !password.trim()) {
         throw new Error('Senha é obrigatória')
       }
-      
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password
@@ -283,7 +283,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (data: RegisterData) => {
     try {
       setLoading(true)
-      
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -312,13 +312,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGoogle = async () => {
     try {
       setLoading(true)
-      
+
       // Use a URL correta do site em produção
-      const baseUrl = typeof window !== 'undefined' 
-        ? window.location.origin 
+      const baseUrl = typeof window !== 'undefined'
+        ? window.location.origin
         : process.env.NEXT_PUBLIC_SITE_URL || 'https://moncoyfinance.com'
-      
-      const redirectUrl = mode === 'admin' 
+
+      const redirectUrl = mode === 'admin'
         ? `${baseUrl}/auth/callback?next=/admin`
         : `${baseUrl}/auth/callback`
 
@@ -350,7 +350,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInAsAdmin = async (email: string, password: string) => {
     try {
       setLoading(true)
-      
+
       // Verificar se o email é de admin
       if (!ADMIN_EMAILS.includes(email)) {
         throw new Error('Email não autorizado para acesso administrativo')
@@ -380,7 +380,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       setLoading(true)
-      
+
       const { error } = await supabase.auth.signOut()
       if (error) throw error
 
@@ -395,7 +395,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const resetPassword = async (email: string) => {
     try {
       setLoading(true)
-      
+
       const redirectUrl = mode === 'admin'
         ? `${window.location.origin}/admin/reset-password`
         : `${window.location.origin}/reset-password`
@@ -441,11 +441,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const { data, error } = await supabase
         .from('user_settings')
-        .upsert({ 
+        .upsert({
           user_id: user.id,
-          ...updates 
-        }, { 
-          onConflict: 'user_id' 
+          ...updates
+        }, {
+          onConflict: 'user_id'
         })
         .select()
         .single()
