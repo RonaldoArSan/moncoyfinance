@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useMemo } from 'react'
 import { useTransactions } from './use-transactions'
 
 interface BudgetItem {
@@ -8,17 +8,22 @@ interface BudgetItem {
   cor: string
 }
 
+// Categorias padrão - definidas fora do componente para manter referência estável
+const DEFAULT_BUDGET_ITEMS: BudgetItem[] = [
+  { categoria: "Alimentação", gasto: 0, limite: 1200, cor: "bg-primary-500" },
+  { categoria: "Transporte", gasto: 0, limite: 600, cor: "bg-secondary-500" },
+  { categoria: "Lazer", gasto: 0, limite: 400, cor: "bg-warning-500" },
+  { categoria: "Saúde", gasto: 0, limite: 300, cor: "bg-success-500" },
+]
+
+const COLORS = ['bg-primary-500', 'bg-secondary-500', 'bg-warning-500', 'bg-success-500', 'bg-purple-500']
+
 export function useBudget() {
-  const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const { transactions, categories } = useTransactions()
+  const { transactions, loading: transactionsLoading } = useTransactions()
 
   // Calcular budget usando useMemo para evitar loops infinitos
-  // Só recalcula quando transactions ou categories mudam de verdade
-  useEffect(() => {
-    // Evitar atualizações desnecessárias
-    if (loading) setLoading(false);
-    
+  // Só recalcula quando transactions realmente mudam
+  const budgetItems = useMemo(() => {
     try {
       // Filtrar transações do mês atual
       const currentMonth = new Date().getMonth()
@@ -33,13 +38,7 @@ export function useBudget() {
 
       // Se não houver transações, usar categorias padrão
       if (monthlyTransactions.length === 0) {
-        setBudgetItems([
-          { categoria: "Alimentação", gasto: 0, limite: 1200, cor: "bg-primary-500" },
-          { categoria: "Transporte", gasto: 0, limite: 600, cor: "bg-secondary-500" },
-          { categoria: "Lazer", gasto: 0, limite: 400, cor: "bg-warning-500" },
-          { categoria: "Saúde", gasto: 0, limite: 300, cor: "bg-success-500" },
-        ])
-        return;
+        return DEFAULT_BUDGET_ITEMS
       }
 
       // Agrupar gastos por categoria
@@ -50,27 +49,25 @@ export function useBudget() {
         categorySpending[categoryName] = (categorySpending[categoryName] || 0) + transaction.amount
       })
 
-      // Definir limites padrão
-      const colors = ['bg-primary-500', 'bg-secondary-500', 'bg-warning-500', 'bg-success-500', 'bg-purple-500']
-      
+      // Gerar dados de orçamento
       const budgetData = Object.entries(categorySpending)
         .slice(0, 4)
         .map(([categoria, gasto], index) => ({
           categoria,
           gasto: Math.abs(gasto),
           limite: Math.max(Math.abs(gasto) * 1.5, 300),
-          cor: colors[index % colors.length]
+          cor: COLORS[index % COLORS.length]
         }))
 
-      setBudgetItems(budgetData)
+      return budgetData
     } catch (error) {
       console.error('Erro ao calcular orçamento:', error)
-      setBudgetItems([])
+      return []
     }
-  }, [transactions, categories]) // Dependências corretas
+  }, [transactions])
 
   return {
     budgetItems,
-    loading
+    loading: transactionsLoading
   }
 }
