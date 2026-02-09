@@ -80,7 +80,7 @@ export function ManageCategoriesModal({ open, onOpenChange, type }: ManageCatego
 
   const addCategory = async () => {
     if (!newCategory.trim()) return
-    
+
     try {
       setSubmitting(true)
       const newCat = await categoriesApi.createCategory({
@@ -102,7 +102,7 @@ export function ManageCategoriesModal({ open, onOpenChange, type }: ManageCatego
 
   const removeCategory = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir esta categoria?')) return
-    
+
     try {
       await categoriesApi.deleteCategory(id)
       setCategories(categories.filter((cat) => cat.id !== id))
@@ -120,12 +120,12 @@ export function ManageCategoriesModal({ open, onOpenChange, type }: ManageCatego
 
   const saveEdit = async () => {
     if (!editingName.trim() || !editingId) return
-    
+
     try {
       const updatedCategory = await categoriesApi.updateCategory(editingId, {
         name: editingName.trim()
       })
-      setCategories(categories.map((cat) => 
+      setCategories(categories.map((cat) =>
         cat.id === editingId ? updatedCategory : cat
       ))
       setEditingId(null)
@@ -155,6 +155,81 @@ export function ManageCategoriesModal({ open, onOpenChange, type }: ManageCatego
       gray: "bg-gray-500",
     }
     return colorMap[color] || "bg-gray-500"
+  }
+
+  // Categorias padrão para cada tipo
+  const defaultCategories: Record<string, Array<{ name: string; color: string }>> = {
+    income: [
+      { name: "Salário", color: "green" },
+      { name: "Freelance", color: "blue" },
+      { name: "Investimentos", color: "indigo" },
+      { name: "Vendas", color: "purple" },
+      { name: "Aluguel Recebido", color: "orange" },
+      { name: "Bônus", color: "yellow" },
+      { name: "Outros", color: "gray" },
+    ],
+    expense: [
+      { name: "Alimentação", color: "orange" },
+      { name: "Transporte", color: "blue" },
+      { name: "Moradia", color: "indigo" },
+      { name: "Saúde", color: "red" },
+      { name: "Educação", color: "purple" },
+      { name: "Lazer", color: "pink" },
+      { name: "Compras", color: "yellow" },
+      { name: "Contas e Serviços", color: "gray" },
+      { name: "Assinaturas", color: "green" },
+      { name: "Outros", color: "gray" },
+    ],
+    goal: [
+      { name: "Reserva de Emergência", color: "green" },
+      { name: "Viagem", color: "blue" },
+      { name: "Carro", color: "indigo" },
+      { name: "Casa Própria", color: "purple" },
+      { name: "Aposentadoria", color: "orange" },
+      { name: "Estudos", color: "yellow" },
+      { name: "Outros", color: "gray" },
+    ],
+    investment: [
+      { name: "Renda Fixa", color: "green" },
+      { name: "Ações", color: "blue" },
+      { name: "Fundos Imobiliários", color: "indigo" },
+      { name: "Criptomoedas", color: "purple" },
+      { name: "Tesouro Direto", color: "orange" },
+      { name: "ETFs", color: "yellow" },
+      { name: "Fundos de Investimento", color: "pink" },
+      { name: "Outros", color: "gray" },
+    ],
+  }
+
+  const [addingDefaults, setAddingDefaults] = useState(false)
+
+  const addDefaultCategories = async () => {
+    const defaults = defaultCategories[type] || []
+    if (defaults.length === 0) return
+
+    try {
+      setAddingDefaults(true)
+      const existingNames = categories.map(c => c.name.toLowerCase())
+
+      for (const cat of defaults) {
+        // Não adicionar se já existir
+        if (existingNames.includes(cat.name.toLowerCase())) continue
+
+        const newCat = await categoriesApi.createCategory({
+          name: cat.name,
+          type: type as 'income' | 'expense',
+          color: cat.color
+        })
+        setCategories(prev => [...prev, newCat])
+      }
+
+      alert('Categorias padrão adicionadas com sucesso!')
+    } catch (error) {
+      console.error('Erro ao adicionar categorias padrão:', error)
+      alert('Erro ao adicionar algumas categorias. Tente novamente.')
+    } finally {
+      setAddingDefaults(false)
+    }
   }
 
   return (
@@ -218,8 +293,26 @@ export function ManageCategoriesModal({ open, onOpenChange, type }: ManageCatego
                   <Loader2 className="w-6 h-6 animate-spin" />
                 </div>
               ) : categories.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>Nenhuma categoria encontrada</p>
+                <div className="text-center py-6 space-y-4">
+                  <p className="text-muted-foreground">Nenhuma categoria encontrada</p>
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      Deseja adicionar categorias padrão para começar?
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={addDefaultCategories}
+                      disabled={addingDefaults}
+                      className="w-full"
+                    >
+                      {addingDefaults ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Plus className="w-4 h-4 mr-2" />
+                      )}
+                      {addingDefaults ? 'Adicionando...' : 'Adicionar Categorias Padrão'}
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 categories.map((category) => (

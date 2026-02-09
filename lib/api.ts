@@ -7,10 +7,10 @@ import type { Transaction, Goal, Investment, InvestmentTransaction, Category, Us
 export const userApi = {
   async getCurrentUser(): Promise<User | null> {
     logger.dev('🔍 [API] Getting current user...')
-    
+
     const { data: { user } } = await supabase.auth.getUser()
     logger.dev('🔍 [API] Auth user:', { id: user?.id, email: user?.email, hasUser: !!user })
-    
+
     if (!user) {
       logger.dev('❌ [API] No auth user found')
       return null
@@ -27,20 +27,20 @@ export const userApi = {
       logger.error('❌ [API] Error fetching user profile:', error)
       throw error
     }
-    
+
     if (!data) {
       logger.dev('⚠️ [API] User profile not found, creating...')
       // If user doesn't exist in public.users, create profile
       return await userApi.createUserProfile(user)
     }
-    
+
     logger.dev('✅ [API] User profile found:', { id: data.id, email: data.email, plan: data.plan })
     return data
   },
 
   async createUserProfile(authUser: any): Promise<User> {
     logger.dev('🆕 [API] Creating user profile...', { id: authUser.id, email: authUser.email })
-    
+
     const userData = {
       id: authUser.id,
       name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',
@@ -72,19 +72,52 @@ export const userApi = {
       // Ignore conflicts - data might already exist
       logger.dev('ℹ️ [API] Default data already exists or error creating:', err)
     }
-    
+
     return data
   },
 
   async createDefaultData(userId: string): Promise<void> {
-    // Create default categories
+    // Create default categories for all types
     const defaultCategories = [
+      // Income categories
       { name: 'Salário', type: 'income', color: 'green' },
       { name: 'Freelance', type: 'income', color: 'blue' },
+      { name: 'Investimentos', type: 'income', color: 'indigo' },
+      { name: 'Vendas', type: 'income', color: 'purple' },
+      { name: 'Aluguel Recebido', type: 'income', color: 'orange' },
+      { name: 'Bônus', type: 'income', color: 'yellow' },
+      { name: 'Outros (Receita)', type: 'income', color: 'gray' },
+
+      // Expense categories
       { name: 'Alimentação', type: 'expense', color: 'orange' },
       { name: 'Transporte', type: 'expense', color: 'blue' },
-      { name: 'Emergência', type: 'goal', color: 'red' },
-      { name: 'Ações', type: 'investment', color: 'green' }
+      { name: 'Moradia', type: 'expense', color: 'indigo' },
+      { name: 'Saúde', type: 'expense', color: 'red' },
+      { name: 'Educação', type: 'expense', color: 'purple' },
+      { name: 'Lazer', type: 'expense', color: 'pink' },
+      { name: 'Compras', type: 'expense', color: 'yellow' },
+      { name: 'Contas e Serviços', type: 'expense', color: 'gray' },
+      { name: 'Assinaturas', type: 'expense', color: 'green' },
+      { name: 'Outros (Despesa)', type: 'expense', color: 'gray' },
+
+      // Goal categories
+      { name: 'Reserva de Emergência', type: 'goal', color: 'green' },
+      { name: 'Viagem', type: 'goal', color: 'blue' },
+      { name: 'Carro', type: 'goal', color: 'indigo' },
+      { name: 'Casa Própria', type: 'goal', color: 'purple' },
+      { name: 'Aposentadoria', type: 'goal', color: 'orange' },
+      { name: 'Estudos', type: 'goal', color: 'yellow' },
+      { name: 'Outros (Meta)', type: 'goal', color: 'gray' },
+
+      // Investment categories
+      { name: 'Renda Fixa', type: 'investment', color: 'green' },
+      { name: 'Ações', type: 'investment', color: 'blue' },
+      { name: 'Fundos Imobiliários', type: 'investment', color: 'indigo' },
+      { name: 'Criptomoedas', type: 'investment', color: 'purple' },
+      { name: 'Tesouro Direto', type: 'investment', color: 'orange' },
+      { name: 'ETFs', type: 'investment', color: 'yellow' },
+      { name: 'Fundos de Investimento', type: 'investment', color: 'pink' },
+      { name: 'Outros (Investimento)', type: 'investment', color: 'gray' },
     ]
 
     // Use upsert to avoid conflicts
@@ -338,7 +371,7 @@ export const investmentsApi = {
 
     const { data, error } = await supabase
       .from('investments')
-      .insert({ ...investment, user_id: user.id })
+      .insert({ ...investment, user_id: uid })
       .select(`
         *,
         category:categories(*)
@@ -491,10 +524,10 @@ export const recurringTransactionsApi = {
         const firstDay = new Date(year, month - 1, 1)
         const firstDayOfWeek = firstDay.getDay()
         const targetDay = rec.day_of_week
-        
+
         let dayDiff = targetDay - firstDayOfWeek
         if (dayDiff < 0) dayDiff += 7
-        
+
         const firstOccurrence = new Date(year, month - 1, 1 + dayDiff)
         if (firstOccurrence <= endOfMonth) {
           transactionDate = firstOccurrence
@@ -502,7 +535,7 @@ export const recurringTransactionsApi = {
       } else if (rec.frequency === 'yearly') {
         const recurringMonth = startDate.getMonth()
         const recurringDay = startDate.getDate()
-        
+
         if (recurringMonth === month - 1) {
           transactionDate = new Date(year, month - 1, recurringDay)
         }

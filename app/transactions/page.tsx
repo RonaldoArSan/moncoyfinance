@@ -21,11 +21,11 @@ export default function TransactionsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null)
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
-  
+
   const { transactions, categories, loading, deleteTransaction, refetchTransactions } = useTransactions()
   const { currentPlan } = useUserPlan()
   const isProfessional = ['pro', 'premium'].includes(currentPlan)
-  
+
   const categoryOptions = ["all", ...categories.map(c => c.name)]
 
   const filteredTransactions = transactions.filter((transaction) => {
@@ -94,9 +94,9 @@ export default function TransactionsPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button 
-                  variant="outline" 
-                  onClick={() => isProfessional ? setIsExportModalOpen(true) : alert('Funcionalidade disponível nos Planos Pro e Premium')} 
+                <Button
+                  variant="outline"
+                  onClick={() => isProfessional ? setIsExportModalOpen(true) : alert('Funcionalidade disponível nos Planos Pro e Premium')}
                   className="w-full sm:w-auto"
                 >
                   <Download className="w-4 h-4 mr-2" />
@@ -161,16 +161,15 @@ export default function TransactionsPage() {
                             {transaction.category?.name || 'Sem categoria'}
                           </Badge>
                           <span className="hidden sm:inline">•</span>
-                          <Badge 
-                            variant="outline" 
-                            className={`text-xs ${
-                              transaction.priority === 'high' ? 'bg-red-50 text-red-700 border-red-200' :
-                              transaction.priority === 'medium' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                              'bg-gray-50 text-gray-700 border-gray-200'
-                            }`}
+                          <Badge
+                            variant="outline"
+                            className={`text-xs ${transaction.priority === 'high' ? 'bg-red-50 text-red-700 border-red-200' :
+                                transaction.priority === 'medium' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                  'bg-gray-50 text-gray-700 border-gray-200'
+                              }`}
                           >
                             {transaction.priority === 'high' ? 'Alta' :
-                             transaction.priority === 'medium' ? 'Média' : 'Baixa'}
+                              transaction.priority === 'medium' ? 'Média' : 'Baixa'}
                           </Badge>
                         </div>
                       </div>
@@ -183,21 +182,20 @@ export default function TransactionsPage() {
                           {transaction.type === "income" ? "+" : "-"}R${" "}
                           {Math.abs(transaction.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                         </div>
-                        <Badge 
-                          variant="outline" 
-                          className={`text-xs ${
-                            transaction.status === "completed" ? "bg-green-50 text-green-700 border-green-200" :
-                            transaction.status === "pending" ? "bg-yellow-50 text-yellow-700 border-yellow-200" :
-                            transaction.status === "overdue" ? "bg-red-50 text-red-700 border-red-200" :
-                            transaction.status === "due_soon" ? "bg-orange-50 text-orange-700 border-orange-200" :
-                            ""
-                          }`}
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${transaction.status === "completed" ? "bg-green-50 text-green-700 border-green-200" :
+                              transaction.status === "pending" ? "bg-yellow-50 text-yellow-700 border-yellow-200" :
+                                transaction.status === "overdue" ? "bg-red-50 text-red-700 border-red-200" :
+                                  transaction.status === "due_soon" ? "bg-orange-50 text-orange-700 border-orange-200" :
+                                    ""
+                            }`}
                         >
                           {transaction.status === "completed" ? "Pago" :
-                           transaction.status === "pending" ? "Pendente" :
-                           transaction.status === "overdue" ? "Vencido" :
-                           transaction.status === "due_soon" ? "A Vencer" :
-                           "Pendente"}
+                            transaction.status === "pending" ? "Pendente" :
+                              transaction.status === "overdue" ? "Vencido" :
+                                transaction.status === "due_soon" ? "A Vencer" :
+                                  "Pendente"}
                         </Badge>
                       </div>
                       <Button
@@ -221,13 +219,13 @@ export default function TransactionsPage() {
       </div>
 
       {/* Modals */}
-      <NewTransactionModal 
-        open={isTransactionModalOpen} 
+      <NewTransactionModal
+        open={isTransactionModalOpen}
         onOpenChange={(open) => {
           setIsTransactionModalOpen(open)
           if (!open) {
             // Recarregar transações quando o modal for fechado
-            refreshTransactions()
+            refetchTransactions()
           }
         }}
       />
@@ -237,7 +235,7 @@ export default function TransactionsPage() {
           setIsEditModalOpen(open)
           if (!open) {
             setSelectedTransaction(null)
-            refreshTransactions()
+            refetchTransactions()
           }
         }}
         transaction={selectedTransaction}
