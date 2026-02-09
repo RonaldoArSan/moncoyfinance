@@ -35,17 +35,18 @@ export interface AuthContextType {
   userProfile: User | null
   loading: boolean
   isAdmin: boolean
-  
+  isInitialized: boolean
+
   // Métodos de autenticação
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
   signUp: (data: RegisterData) => Promise<{ success: boolean; error?: string }>
   signInWithGoogle: () => Promise<{ success: boolean; error?: string }>
   signOut: () => Promise<{ success: boolean; error?: string }>
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>
-  
+
   // Métodos admin
   signInAsAdmin: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
-  
+
   // Métodos de perfil
   updateProfile: (updates: Partial<User>) => Promise<{ success: boolean; error?: string }>
   getUserSettings: () => Promise<UserSettings | null>

@@ -23,6 +23,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<User | null>(null)
   const [userSettings, setUserSettings] = useState<UserSettings | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isInitialized, setIsInitialized] = useState(false)
   const [mode, setMode] = useState<AppMode>('public')
 
   const router = useRouter()
@@ -72,6 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (mounted && loading) {
         logger.dev('⚠️ Safety timeout reached, forcing loading to false')
         setLoading(false)
+        setIsInitialized(true)
       }
     }, 5000)
 
@@ -84,6 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           logger.error('❌ Error getting session:', error)
           if (mounted) {
             setLoading(false)
+            setIsInitialized(true)
           }
           return
         }
@@ -101,11 +104,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUserSettings(null)
           }
           setLoading(false)
+          setIsInitialized(true)
         }
       } catch (error) {
         logger.error('❌ Error initializing auth:', error)
         if (mounted) {
           setLoading(false)
+          setIsInitialized(true)
           isProcessing = false
         }
       }
@@ -522,6 +527,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userProfile,
     loading,
     isAdmin,
+    isInitialized,
     signIn,
     signUp,
     signInWithGoogle,
