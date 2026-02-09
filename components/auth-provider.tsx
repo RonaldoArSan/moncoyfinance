@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { userApi } from '@/lib/api'
@@ -60,8 +60,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [pathname])
 
-  // Verificar se é admin usando configuração centralizada
-  const isAdmin = ADMIN_CONFIG.isAdmin(user?.email)
+  // Verificar se é admin usando configuração centralizada (memoizado para evitar re-renders)
+  const isAdmin = useMemo(() => {
+    if (!user?.email) return false
+    return ADMIN_CONFIG.isAdmin(user.email)
+  }, [user?.email])
 
   // Inicializar sessão - executa apenas uma vez
   useEffect(() => {

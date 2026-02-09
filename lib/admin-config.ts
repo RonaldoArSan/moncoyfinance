@@ -35,7 +35,6 @@ export const ADMIN_CONFIG = {
    */
   isAdmin(email: string | null | undefined): boolean {
     if (!email) {
-      logger.dev('[ADMIN_CONFIG] No email provided for admin check')
       return false
     }
 
@@ -45,7 +44,7 @@ export const ADMIN_CONFIG = {
     )
 
     logger.dev('[ADMIN_CONFIG] Admin check:', { email: normalizedEmail, isAdmin: isAdminUser })
-    
+
     return isAdminUser
   },
 

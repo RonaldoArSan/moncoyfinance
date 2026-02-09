@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth-provider'
 import { Loader2 } from 'lucide-react'
 
@@ -18,48 +18,64 @@ export function AuthGuard({
 }: AuthGuardProps) {
   const { user, loading, isAdmin, isInitialized } = useAuth()
   const router = useRouter()
-  const pathname = usePathname()
-  const [hasChecked, setHasChecked] = useState(false)
+  const [authState, setAuthState] = useState<'checking' | 'authorized' | 'unauthorized'>('checking')
 
-  useEffect(() => {
-    // Aguardar inicialização completa do auth
+  const checkAuth = useCallback(() => {
+    // Aguardar inicialização
     if (!isInitialized) return
 
-    // Páginas públicas - não precisam de autenticação
+    // Páginas públicas - sempre autorizado
     if (requiredMode === 'public') {
-      setHasChecked(true)
+      setAuthState('authorized')
       return
     }
 
-    // Páginas de usuário - precisam estar logados
+    // Páginas de usuário
     if (requiredMode === 'user') {
-      if (!user) {
-        router.replace(redirectTo || '/login')
-        return
+      if (user) {
+        setAuthState('authorized')
+      } else {
+        setAuthState('unauthorized')
       }
-      setHasChecked(true)
       return
     }
 
-    // Páginas de admin - precisam ser admin
+    // Páginas de admin
     if (requiredMode === 'admin') {
-      if (!user) {
-        router.replace('/admin/login')
-        return
+      if (user && isAdmin) {
+        setAuthState('authorized')
+      } else {
+        setAuthState('unauthorized')
       }
-      if (!isAdmin) {
-        router.replace('/admin/login?error=unauthorized')
-        return
-      }
-      setHasChecked(true)
       return
     }
 
-    setHasChecked(true)
-  }, [user, isAdmin, isInitialized, requiredMode, router, redirectTo])
+    setAuthState('authorized')
+  }, [user, isAdmin, isInitialized, requiredMode])
 
-  // Ainda inicializando
-  if (!isInitialized || loading) {
+  // Verificar autenticação quando dependências mudarem
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
+
+  // Redirecionar se não autorizado (em efeito separado para evitar erros)
+  useEffect(() => {
+    if (authState === 'unauthorized') {
+      const target = requiredMode === 'admin'
+        ? (user ? '/admin/login?error=unauthorized' : '/admin/login')
+        : (redirectTo || '/login')
+
+      // Usar setTimeout para evitar erro de redirect durante render
+      const timer = setTimeout(() => {
+        router.replace(target)
+      }, 0)
+
+      return () => clearTimeout(timer)
+    }
+  }, [authState, requiredMode, user, redirectTo, router])
+
+  // Ainda inicializando ou verificando
+  if (!isInitialized || loading || authState === 'checking') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -70,20 +86,20 @@ export function AuthGuard({
     )
   }
 
-  // Verificação concluída - mostrar conteúdo
-  if (hasChecked) {
-    return <>{children}</>
+  // Não autorizado - mostra loading enquanto redireciona
+  if (authState === 'unauthorized') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Redirecionando...</p>
+        </div>
+      </div>
+    )
   }
 
-  // Aguardando redirecionamento
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-        <p className="text-muted-foreground">Redirecionando...</p>
-      </div>
-    </div>
-  )
+  // Autorizado - mostrar conteúdo
+  return <>{children}</>
 }
 
 // Guard específico para usuários
