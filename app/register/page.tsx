@@ -180,7 +180,7 @@ function RegisterForm() {
                 </div>
 
                 {/* Basic Info Form */}
-                <div className="space-y-4">
+                <form onSubmit={(e) => { e.preventDefault(); nextStep(); }} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nome completo</Label>
                     <div className="relative">
@@ -282,10 +282,10 @@ function RegisterForm() {
                     </div>
                   </div>
 
-                  <Button onClick={nextStep} className="w-full h-11">
+                  <Button type="submit" className="w-full h-11">
                     Continuar
                   </Button>
-                </div>
+                </form>
               </>
             )}
 
