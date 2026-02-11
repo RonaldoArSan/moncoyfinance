@@ -47,7 +47,8 @@ export const userApi = {
       email: authUser.email,
       plan: authUser.user_metadata?.plan || 'basic' as const,
       registration_date: authUser.created_at,
-      photo_url: authUser.user_metadata?.avatar_url || null // Foto do Google
+      photo_url: authUser.user_metadata?.avatar_url || null, // Foto do Google
+      email_confirmed_at: authUser.confirmed_at || null // Confirmation timestamp
     }
 
     logger.dev('📝 [API] User data to insert:', userData)

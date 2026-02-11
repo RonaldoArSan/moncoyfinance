@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress"
 import { NewTransactionModal } from "@/components/modals/new-transaction-modal"
 import { FinancialSummary } from "@/components/financial-summary"
+import { EmailConfirmationBanner } from "@/components/email-confirmation-banner"
 import {
   Target,
   CreditCard,
@@ -32,6 +33,8 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* Email Confirmation Warning Banner */}
+      <EmailConfirmationBanner />
       {/* Header com gradiente */}
       <div className="gradient-hero rounded-xl p-8 text-white">
         <div className="flex items-center justify-between">

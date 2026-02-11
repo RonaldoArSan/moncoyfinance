@@ -5,6 +5,7 @@ CREATE TABLE users (
   email VARCHAR(255) UNIQUE,
   plan VARCHAR(50) DEFAULT 'basic',
   registration_date TIMESTAMPTZ DEFAULT NOW(),
+  email_confirmed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -175,12 +176,13 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Create a profile in public.users
-  INSERT INTO public.users (id, name, email, plan)
+  INSERT INTO public.users (id, name, email, plan, email_confirmed_at)
   VALUES (
     NEW.id,
     NEW.raw_user_meta_data->>'name',
     NEW.email,
-    'basic'
+    'basic',
+    NEW.confirmed_at
   );
   
   -- Create default settings in public.user_settings
